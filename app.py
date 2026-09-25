@@ -115,9 +115,9 @@ tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "⚙️ දත්ත පාලනය"
 ])
 
-# Grade List including English Medium
+# Grade List including Foundation Grade & English Medium
 GRADES = [
-    "1 ශ්‍රේණිය", "2 ශ්‍රේණිය", "3 ශ්‍රේණිය", "4 ශ්‍රේණිය", "5 ශ්‍රේණිය",
+    "මූලික ශ්‍රේණිය", "1 ශ්‍රේණිය", "2 ශ්‍රේණිය", "3 ශ්‍රේණිය", "4 ශ්‍රේණිය", "5 ශ්‍රේණිය",
     "English Medium 1", "English Medium 2", "English Medium 3", "English Medium 4", "English Medium 5"
 ]
 

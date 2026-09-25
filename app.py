@@ -229,15 +229,12 @@ with tab1:
                     with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී..."):
                         model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt_text = (
-                            "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
-                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
-                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
-                            "JSON Format:\n"
-                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
-                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
+                            "Extract student marks into a JSON list. "
+                            "Format: [{\"Student ID\": \"3017\", \"Marks\": {\"ත්‍රිපිටක ධර්මය (Tripitaka)\": 48, \"සිංහල (Sinhala)\": 62, \"පාලි (Pali)\": 60, \"සංස්ක්‍රත (Sanskrit)\": 55, \"ගණිතය (Maths)\": 59, \"ඉංග්‍රීසි (English)\": 31, \"ඉතිහාසය (History)\": 0, \"සමාජ විද්‍යාව (Social Sci.)\": 0, \"සෞඛ්‍ය විද්‍යාව (Health Sci.)\": 0, \"භූගෝල විද්‍යාව (Geog. Phy.)\": 0}}] "
+                            "Return only pure JSON without markdown blocks."
                         )
                         response = model.generate_content([img, prompt_text])
-                        raw_json = response.text.strip().replace("```json", "").replace("```", "")
+                        raw_json = response.text.strip().replace("```json", "").replace("```", "").strip()
                         extracted_students = json.loads(raw_json)
                         
                         new_rows = []
@@ -287,12 +284,9 @@ with tab1:
                         
                         model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt_text = (
-                            "මෙම PDF ගොනුවෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
-                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
-                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
-                            "JSON Format:\n"
-                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
-                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
+                            "Extract student marks into a JSON list from this PDF. "
+                            "Format: [{\"Student ID\": \"3017\", \"Marks\": {\"ත්‍රිපිටක ධර්මය (Tripitaka)\": 48, \"සිංහල (Sinhala)\": 62, \"පාලි (Pali)\": 60, \"සංස්ක්‍රත (Sanskrit)\": 55, \"ගණිතය (Maths)\": 59, \"ඉංග්‍රීසි (English)\": 31, \"ඉතිහාසය (History)\": 0, \"සමාජ විද්‍යාව (Social Sci.)\": 0, \"සෞඛ්‍ය විද්‍යාව (Health Sci.)\": 0, \"භූගෝල විද්‍යාව (Geog. Phy.)\": 0}}] "
+                            "Return only pure JSON without markdown blocks."
                         )
                         
                         response = model.generate_content([pdf_file_ref, prompt_text])

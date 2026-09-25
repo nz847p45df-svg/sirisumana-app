@@ -548,7 +548,7 @@ with tab1:
 # TAB 2: SUBJECT-WISE OFFICIAL PRINT FORM
 # ----------------------------------------------------
 with tab2:
-  st.header("📄 මූලික පිරිවෙණ මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
+  st.header("📄 වාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
 
   col_sel1, col_sel2, col_sel3, col_sel4 = st.columns(4)
   with col_sel1:

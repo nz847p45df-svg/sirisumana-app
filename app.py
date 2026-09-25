@@ -25,10 +25,13 @@ def load_marks_data():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return pd.DataFrame(data)
+                df = pd.DataFrame(data)
+                if "Year" not in df.columns:
+                    df["Year"] = "2026"
+                return df
         except Exception:
             pass
-    return pd.DataFrame(columns=["Student ID", "Name", "Grade", "Term", "Subject", "Marks", "Status"])
+    return pd.DataFrame(columns=["Student ID", "Name", "Grade", "Year", "Term", "Subject", "Marks", "Status"])
 
 def save_marks_data(df):
     data = df.to_dict(orient="records")
@@ -54,7 +57,7 @@ st.session_state.student_data = load_marks_data()
 st.session_state.roster_data = load_roster_data()
 
 # Header
-st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා පිරිවෙන")
+st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 
@@ -89,6 +92,9 @@ GRADES = [
     "English Medium 1", "English Medium 2", "English Medium 3", "English Medium 4", "English Medium 5"
 ]
 
+# Years List
+YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
+
 # List of all 10 subjects
 SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
@@ -118,7 +124,11 @@ with tab0:
     st.header("📋 පන්ති අනුව ශිෂ්‍ය නාම ලේඛනය ලියාපදිංචිය")
     st.info("මෙහි පන්තියට අදාළ ශිෂ්‍ය විභාග අංක සහ නම් ලියාපදිංචි කර තැබිය හැක. එතකොට ලකුණු දාද්දී නම Auto-fill වේ.")
     
-    r_grade = st.selectbox("ශ්‍රේණිය / පන්තිය තෝරන්න:", GRADES, key="r_grade")
+    col_r_meta1, col_r_meta2 = st.columns(2)
+    with col_r_meta1:
+        r_grade = st.selectbox("ශ්‍රේණිය / පන්තිය තෝරන්න:", GRADES, key="r_grade")
+    with col_r_meta2:
+        r_year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="r_year")
     
     col_r1, col_r2 = st.columns(2)
     with col_r1:
@@ -154,6 +164,7 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         grade = st.selectbox("ශ්‍රේණිය / පන්තිය තෝරන්න:", GRADES, key="entry_grade")
+        year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="entry_year")
         term = st.selectbox("වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="entry_term")
         
         # Check roster options
@@ -180,11 +191,12 @@ with tab1:
         for sub in SUBJECTS:
             marks_dict[sub] = st.number_input(f"{sub} ලකුණු:", min_value=0, max_value=100, value=0, step=1)
 
-    # Checking if data for this student/term is already locked
+    # Checking if data for this student/term/year is already locked
     is_locked = False
     if not st.session_state.student_data.empty:
         check_df = st.session_state.student_data[
             (st.session_state.student_data["Student ID"] == student_id) & 
+            (st.session_state.student_data["Year"] == year) &
             (st.session_state.student_data["Term"] == term) &
             (st.session_state.student_data["Status"] == "Locked")
         ]
@@ -194,7 +206,7 @@ with tab1:
     st.divider()
 
     if is_locked and not admin_access:
-        st.error("⛔ මෙම ශිෂ්‍යයාගේ මෙම වාරයේ ලකුණු දැනටමත් Lock කර ඇත. වෙනස් කිරීමට Admin අමතන්න.")
+        st.error("⛔ මෙම ශිෂ්‍යයාගේ මෙම වර්ෂයේ සහ වාරයේ ලකුණු දැනටමත් Lock කර ඇත. වෙනස් කිරීමට Admin අමතන්න.")
     else:
         btn_col1, btn_col2 = st.columns(2)
         
@@ -203,13 +215,14 @@ with tab1:
                 if student_id and student_name:
                     st.session_state.student_data = st.session_state.student_data[
                         ~((st.session_state.student_data["Student ID"] == student_id) & 
+                          (st.session_state.student_data["Year"] == year) &
                           (st.session_state.student_data["Term"] == term))
                     ]
                     new_rows = []
                     for sub, mark in marks_dict.items():
                         new_rows.append({
                             "Student ID": student_id, "Name": student_name,
-                            "Grade": grade, "Term": term, "Subject": sub,
+                            "Grade": grade, "Year": year, "Term": term, "Subject": sub,
                             "Marks": mark, "Status": "Draft"
                         })
                     st.session_state.student_data = pd.concat([st.session_state.student_data, pd.DataFrame(new_rows)], ignore_index=True)
@@ -223,13 +236,14 @@ with tab1:
                 if student_id and student_name:
                     st.session_state.student_data = st.session_state.student_data[
                         ~((st.session_state.student_data["Student ID"] == student_id) & 
+                          (st.session_state.student_data["Year"] == year) &
                           (st.session_state.student_data["Term"] == term))
                     ]
                     new_rows = []
                     for sub, mark in marks_dict.items():
                         new_rows.append({
                             "Student ID": student_id, "Name": student_name,
-                            "Grade": grade, "Term": term, "Subject": sub,
+                            "Grade": grade, "Year": year, "Term": term, "Subject": sub,
                             "Marks": mark, "Status": "Locked"
                         })
                     st.session_state.student_data = pd.concat([st.session_state.student_data, pd.DataFrame(new_rows)], ignore_index=True)
@@ -244,25 +258,28 @@ with tab1:
 with tab2:
     st.header("📄 මූලික පිරිවෙණ මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
     
-    col_sel1, col_sel2, col_sel3 = st.columns(3)
+    col_sel1, col_sel2, col_sel3, col_sel4 = st.columns(4)
     with col_sel1:
         sel_grade = st.selectbox("ශ්‍රේණිය තෝරන්න:", GRADES, key="sub_grade")
     with col_sel2:
-        sel_term = st.selectbox("වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="sub_term")
+        sel_year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="sub_year")
     with col_sel3:
+        sel_term = st.selectbox("වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="sub_term")
+    with col_sel4:
         sel_subject = st.selectbox("විෂය තෝරන්න:", SUBJECTS, key="sub_subject")
 
     st.divider()
 
-    # Refresh data from session
+    # Filter Data
     sub_df = st.session_state.student_data[
         (st.session_state.student_data["Grade"] == sel_grade) &
+        (st.session_state.student_data["Year"] == sel_year) &
         (st.session_state.student_data["Term"] == sel_term) &
         (st.session_state.student_data["Subject"] == sel_subject)
     ].copy()
 
     if sub_df.empty:
-        st.info("තෝරාගත් පන්තිය, වාරය සහ විෂය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
+        st.info("තෝරාගත් පන්තිය, වර්ෂය, වාරය සහ විෂය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
     else:
         sub_df["සාමාර්ථය"] = sub_df["Marks"].apply(get_grade)
         sub_df["සාධන මට්ටම"] = sub_df["Marks"].apply(lambda x: f"{x}%")
@@ -323,9 +340,10 @@ with tab2:
             <div class="header-box">
                 <h2 style="margin:2px;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
                 <h3 style="margin:2px;">විභාග අංශය</h3>
-                <p style="margin:2px;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term})</p>
+                <p style="margin:2px;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
                     <span>ශ්‍රේණිය :- {sel_grade}</span>
+                    <span>වර්ෂය :- {sel_year}</span>
                     <span>විෂය :- {sel_subject}</span>
                 </div>
             </div>
@@ -382,7 +400,7 @@ with tab2:
         st.download_button(
             label="📥 නිල වාර්තාව Download කරගන්න (Printable Document)",
             data=html_doc,
-            file_name=f"{sel_grade}_{sel_subject}_Report.html",
+            file_name=f"{sel_grade}_{sel_year}_{sel_subject}_Report.html",
             mime="text/html",
             type="primary",
             use_container_width=True
@@ -396,22 +414,28 @@ with tab3:
     if st.session_state.student_data.empty:
         st.info("විශ්ලේෂණය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
     else:
-        student_list = st.session_state.student_data["Student ID"].unique()
-        selected_student = st.selectbox("විශ්ලේෂණය සඳහා ශිෂ්‍ය අංකය තෝරන්න:", student_list, key="st_select")
+        st_year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="st_year")
         
-        student_df = st.session_state.student_data[st.session_state.student_data["Student ID"] == selected_student]
-        s_name = student_df["Name"].iloc[0]
-        s_grade = student_df["Grade"].iloc[0]
-        
-        st.subheader(f"ශිෂ්‍යයා: {s_name} | විභාග අංකය: {selected_student} | ශ්‍රේණිය: {s_grade}")
-        
-        fig = px.bar(student_df, x="Subject", y="Marks", color="Term", barmode="group",
-                     title="වාර 3 හි විෂයයන් 10 ලකුණු සංසන්දනය", text_auto=True)
-        st.plotly_chart(fig, use_container_width=True)
+        filtered_by_year = st.session_state.student_data[st.session_state.student_data["Year"] == st_year]
+        if filtered_by_year.empty:
+            st.info("මෙම වර්ෂය සඳහා දත්ත නොමැත.")
+        else:
+            student_list = filtered_by_year["Student ID"].unique()
+            selected_student = st.selectbox("විශ්ලේෂණය සඳහා ශිෂ්‍ය අංකය තෝරන්න:", student_list, key="st_select")
+            
+            student_df = filtered_by_year[filtered_by_year["Student ID"] == selected_student]
+            s_name = student_df["Name"].iloc[0]
+            s_grade = student_df["Grade"].iloc[0]
+            
+            st.subheader(f"ශිෂ්‍යයා: {s_name} | විභාග අංකය: {selected_student} | ශ්‍රේණිය: {s_grade} | වර්ෂය: {st_year}")
+            
+            fig = px.bar(student_df, x="Subject", y="Marks", color="Term", barmode="group",
+                         title=f"{st_year} වර්ෂයේ වාර 3 හි විෂයයන් 10 ලකුණු සංසන්දනය", text_auto=True)
+            st.plotly_chart(fig, use_container_width=True)
 
-        pivot_df = student_df.pivot(index="Subject", columns="Term", values="Marks").fillna(0)
-        st.write("### වාර 3 හි විෂයයන් අනුව ලකුණු සාරාංශය")
-        st.dataframe(pivot_df, use_container_width=True)
+            pivot_df = student_df.pivot(index="Subject", columns="Term", values="Marks").fillna(0)
+            st.write("### වාර 3 හි විෂයයන් අනුව ලකුණු සාරාංශය")
+            st.dataframe(pivot_df, use_container_width=True)
 
 # ----------------------------------------------------
 # TAB 4: CLASS OVERALL ANALYSIS
@@ -421,18 +445,24 @@ with tab4:
     if st.session_state.student_data.empty:
         st.info("විශ්ලේෂණය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
     else:
-        c_grade = st.selectbox("නිරීක්ෂණයට ශ්‍රේණිය තෝරන්න:", GRADES, key="cl_grade")
-        c_term = st.selectbox("නිරීක්ෂණයට වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="cl_term")
+        col_cl1, col_cl2, col_cl3 = st.columns(3)
+        with col_cl1:
+            c_grade = st.selectbox("නිරීක්ෂණයට ශ්‍රේණිය තෝරන්න:", GRADES, key="cl_grade")
+        with col_cl2:
+            c_year = st.selectbox("නිරීක්ෂණයට වර්ෂය තෝරන්න:", YEARS, index=1, key="cl_year")
+        with col_cl3:
+            c_term = st.selectbox("නිරීක්ෂණයට වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="cl_term")
         
         class_df = st.session_state.student_data[
             (st.session_state.student_data["Grade"] == c_grade) &
+            (st.session_state.student_data["Year"] == c_year) &
             (st.session_state.student_data["Term"] == c_term)
         ]
         
         if class_df.empty:
-            st.warning("මෙම පන්තිය සහ වාරය සඳහා දත්ත නොමැත.")
+            st.warning("මෙම පන්තිය, වර්ෂය සහ වාරය සඳහා දත්ත නොමැත.")
         else:
-            fig_class = px.box(class_df, x="Subject", y="Marks", points="all", title=f"{c_grade} - {c_term} විෂයයන් අනුව ලකුණු ව්‍යාප්තිය")
+            fig_class = px.box(class_df, x="Subject", y="Marks", points="all", title=f"{c_grade} ({c_year}) - {c_term} විෂයයන් අනුව ලකුණු ව්‍යාප්තිය")
             st.plotly_chart(fig_class, use_container_width=True)
 
 # ----------------------------------------------------
@@ -449,7 +479,7 @@ with tab5:
     with col_del1:
         if st.button("🗑️ පරීක්ෂණ දත්ත සියල්ල ඉවත් කරන්න (Clear All Data)", type="secondary", use_container_width=True):
             st.session_state.student_data = pd.DataFrame(columns=[
-                "Student ID", "Name", "Grade", "Term", "Subject", "Marks", "Status"
+                "Student ID", "Name", "Grade", "Year", "Term", "Subject", "Marks", "Status"
             ])
             save_marks_data(st.session_state.student_data)
             st.success("සියලු දත්ත සාර්ථකව පද්ධතියෙන් ඉවත් කරන ලදී!")

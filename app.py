@@ -17,7 +17,7 @@ st.set_page_config(
 
 # Admin Password & API Configuration
 ADMIN_PASSWORD = "sirisumana123"
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")  # මෙතැනට API Key එක යොදන්න
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
 
 # Permanent Data Files
 DATA_FILE = "student_marks.json"
@@ -35,7 +35,7 @@ def load_marks_data():
                 return df
         except Exception:
             pass
-    return pd.DataFrame(columns=["Student ID", "Name", "Grade", "Year", "Term", "Subject", "Marks", "Status"])
+    return pd.DataFrame(columns=["Student ID", "Grade", "Year", "Term", "Subject", "Marks", "Status"])
 
 def save_marks_data(df):
     data = df.to_dict(orient="records")
@@ -65,7 +65,7 @@ st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්වි
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 
-# Sidebar Authentication
+# Sidebar Authentication & UI Zoom Control
 st.sidebar.title("🔑 පද්ධති ප්‍රවේශය (Login)")
 role = st.sidebar.radio("ඔබගේ කාර්යභාරය තෝරන්න:", ["පන්තිභාර ගුරු (Teacher)", "විදුහල්පති/Admin (Principal)"])
 
@@ -79,6 +79,31 @@ if role == "විදුහල්පති/Admin (Principal)":
         st.sidebar.error("වැරදි මුරපදයකි!")
 
 st.sidebar.divider()
+
+# App UI Zoom Control Settings
+st.sidebar.subheader("🔍 App Zoom & ಅකුරු ප්‍රමාණය")
+zoom_level = st.sidebar.select_slider(
+    "පද්ධතියේ Font Size එක තෝරන්න:",
+    options=["සාමාන්‍ය (Normal)", "විශාල (Large)", "ඉතා විශාල (Extra Large)"],
+    value="සාමාන්‍ය (Normal)"
+)
+
+if zoom_level == "විශාල (Large)":
+    st.markdown("""
+        <style>
+            html, body, [class*="css"] { font-size: 18px !important; }
+            input { font-size: 18px !important; height: 45px !important; }
+            .stSelectbox, .stNumberInput { font-size: 18px !important; }
+        </style>
+    """, unsafe_allow_html=True)
+elif zoom_level == "ඉතා විශාල (Extra Large)":
+    st.markdown("""
+        <style>
+            html, body, [class*="css"] { font-size: 21px !important; }
+            input { font-size: 21px !important; height: 50px !important; }
+            .stSelectbox, .stNumberInput { font-size: 21px !important; }
+        </style>
+    """, unsafe_allow_html=True)
 
 # TAB NAVIGATION
 tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -126,7 +151,7 @@ def get_grade(marks):
 # ----------------------------------------------------
 with tab0:
     st.header("📋 පන්ති අනුව ශිෂ්‍ය නාම ලේඛනය ලියාපදිංචිය")
-    st.info("මෙහි පන්තියට අදාළ ශිෂ්‍ය විභාග අංක සහ නම් ලියාපදිංචි කර තැබිය හැක. එතකොට ලකුණු දාද්දී නම Auto-fill වේ.")
+    st.info("මෙහි පන්තියට අදාළ ශිෂ්‍ය විභාග අංක ලියාපදිංචි කර තැබිය හැක.")
     
     col_r_meta1, col_r_meta2 = st.columns(2)
     with col_r_meta1:
@@ -134,27 +159,26 @@ with tab0:
     with col_r_meta2:
         r_year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="r_year")
     
-    col_r1, col_r2 = st.columns(2)
-    with col_r1:
-        reg_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය (උදා: 3000):")
-    with col_r2:
-        reg_name = st.text_input("ශිෂ්‍යයාගේ නම (උදා: ගජබාපුර සුසීම ධම්ම හිමි):")
+    reg_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය (උදා: 3000):")
         
-    if st.button("➕ ශිෂ්‍යයා පන්තියට Save කරන්න", type="primary"):
-        if reg_id and reg_name:
+    if st.button("➕ ශිෂ්‍ය අංකය පන්තියට Save කරන්න", type="primary"):
+        if reg_id:
             if r_grade not in st.session_state.roster_data:
-                st.session_state.roster_data[r_grade] = {}
-            st.session_state.roster_data[r_grade][reg_id] = reg_name
-            save_roster_data(st.session_state.roster_data)
-            st.success(f"{reg_name} ({reg_id}) ශිෂ්‍යයා {r_grade} පන්තියට සාර්ථකව සේව් විය!")
-            st.rerun()
+                st.session_state.roster_data[r_grade] = []
+            if reg_id not in st.session_state.roster_data[r_grade]:
+                st.session_state.roster_data[r_grade].append(reg_id)
+                save_roster_data(st.session_state.roster_data)
+                st.success(f"විභාග අංක {reg_id} ශිෂ්‍යයා {r_grade} පන්තියට සාර්ථකව සේව් විය!")
+                st.rerun()
+            else:
+                st.warning("මෙම විභාග අංකය දැනටමත් ඇතුළත් කර ඇත.")
         else:
-            st.warning("කරුණාකර විභාග අංකය සහ නම ඇතුළත් කරන්න.")
+            st.warning("කරුණාකර විභාග අංකය ඇතුළත් කරන්න.")
             
     st.divider()
-    st.subheader(f"📌 {r_grade} දැනට ලියාපදිංචි සිසුන්")
+    st.subheader(f"📌 {r_grade} දැනට ලියාපදිංචි සිසුන්ගේ අංක")
     if r_grade in st.session_state.roster_data and st.session_state.roster_data[r_grade]:
-        roster_df = pd.DataFrame(list(st.session_state.roster_data[r_grade].items()), columns=["විභාග අංකය", "ශිෂ්‍යයාගේ නම"])
+        roster_df = pd.DataFrame(st.session_state.roster_data[r_grade], columns=["විභාග අංකය"])
         st.dataframe(roster_df, use_container_width=True)
     else:
         st.write("මෙම පන්තියට තවමත් සිසුන් ලියාපදිංචි කර නැත.")
@@ -170,9 +194,15 @@ with tab1:
 
     if "AI Scan" in entry_method:
         st.subheader("📸 ලකුණු ලේඛනයේ ඡායාරූපයක් (Photo) මඟින් දත්ත ලබා ගැනීම")
-        st.info("ලකුණු කොළයේ පැහැදිලි ඡායාරූපයක් Upload කරන්න. AI මඟින් එම දත්ත පද්ධතියට ලබා ගනු ඇත.")
+        st.info("💡 **ඡායාරූපය Zoom කිරීමට:** Photo එක මත ක්ලික් කරන්න නැතහොත් පහත Zoom Slider එක භාවිත කරන්න.")
 
         uploaded_file = st.file_uploader("ලකුණු පත්‍රිකාවේ Image එකක් Upload කරන්න (JPG/PNG)", type=["jpg", "jpeg", "png"])
+
+        if uploaded_file:
+            img = Image.open(uploaded_file)
+            with st.expander("🔍 ඡායාරූපය Zoom කර බලන්න (Image Zoom Controls)", expanded=True):
+                img_width = st.slider("ඡායාරූපයේ ප්‍රමාණය (Zoom Level):", min_value=300, max_value=1500, value=700, step=50)
+                st.image(img, caption="Upload කරන ලද ලකුණු පත්‍රිකාව", width=img_width)
 
         col_scan1, col_scan2, col_scan3 = st.columns(3)
         with col_scan1:
@@ -188,12 +218,11 @@ with tab1:
             else:
                 try:
                     with st.spinner("AI මඟින් ඡායාරූපයේ ලකුණු පරීක්ෂා කරමින් පවතී... කරුණාකර රැඳී සිටින්න."):
-                        img = Image.open(uploaded_file)
                         client = genai.Client(api_key=GEMINI_API_KEY)
                         
                         prompt = f"""
                         මෙම ඡායාරූපයෙහි ඇත්තේ ශිෂ්‍ය ලකුණු ලේඛනයකි.
-                        කරුණාකර මෙහි ඇති සෑම ශිෂ්‍යයෙකුගේම දත්ත පහත JSON ආකෘතියෙන් (Format) පමණක් ලබාදෙන්න. 
+                        කරුණාකර මෙහි ඇති සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පමණක් පහත JSON ආකෘතියෙන් ලබාදෙන්න. 
                         
                         අවශ්‍ය විෂයන්:
                         - ත්‍රිපිටක ධර්මය (Tripitaka)
@@ -213,7 +242,6 @@ with tab1:
                         [
                           {{
                             "Student ID": "3017",
-                            "Name": "ශිෂ්‍යයාගේ නම",
                             "Marks": {{
                               "ත්‍රිපිටක ධර්මය (Tripitaka)": 48,
                               "සිංහල (Sinhala)": 62,
@@ -232,10 +260,8 @@ with tab1:
                         """
                         
                         response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents=[img, prompt]
-)
-
+                            model="gemini-2.5-flash",
+                            contents=[img, prompt]
                         )
                         
                         raw_json = response.text.strip().replace("```json", "").replace("```", "")
@@ -244,14 +270,12 @@ with tab1:
                         new_rows = []
                         for st_data in extracted_students:
                             s_id = str(st_data.get("Student ID", ""))
-                            s_name = str(st_data.get("Name", ""))
                             s_marks = st_data.get("Marks", {})
                             
                             for sub, mark in s_marks.items():
                                 if sub in SUBJECTS:
                                     new_rows.append({
                                         "Student ID": s_id,
-                                        "Name": s_name,
                                         "Grade": scan_grade,
                                         "Year": scan_year,
                                         "Term": scan_term,
@@ -279,22 +303,18 @@ with tab1:
             term = st.selectbox("වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="entry_term")
             
             # Check roster options
-            roster_dict = st.session_state.roster_data.get(grade, {})
-            if roster_dict:
+            roster_list = st.session_state.roster_data.get(grade, [])
+            if roster_list:
                 selected_student_option = st.selectbox(
                     "ලියාපදිංචි සිසුන්ගෙන් තෝරන්න (නැතහොත් පහළින් ටයිප් කරන්න):",
-                    ["-- අලුතින් ටයිප් කරන්න --"] + [f"{s_id} - {s_name}" for s_id, s_name in roster_dict.items()]
+                    ["-- අලුතින් ටයිප් කරන්න --"] + roster_list
                 )
                 if selected_student_option != "-- අලුතින් ටයිප් කරන්න --":
-                    auto_id, auto_name = selected_student_option.split(" - ", 1)
-                    student_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය:", value=auto_id)
-                    student_name = st.text_input("ශිෂ්‍යයාගේ නම:", value=auto_name)
+                    student_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය:", value=selected_student_option)
                 else:
                     student_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය (Index No):")
-                    student_name = st.text_input("ශිෂ්‍යයාගේ නම:")
             else:
                 student_id = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය (Index No):")
-                student_name = st.text_input("ශිෂ්‍යයාගේ නම:")
 
         with col2:
             st.subheader("විෂයයන් 10 සහ ලකුණු")
@@ -323,7 +343,7 @@ with tab1:
             
             with btn_col1:
                 if st.button("💾 තාවකාලිකව සුරකින්න (Save Draft)", use_container_width=True):
-                    if student_id and student_name:
+                    if student_id:
                         st.session_state.student_data = st.session_state.student_data[
                             ~((st.session_state.student_data["Student ID"] == student_id) & 
                               (st.session_state.student_data["Year"] == year) &
@@ -332,7 +352,7 @@ with tab1:
                         new_rows = []
                         for sub, mark in marks_dict.items():
                             new_rows.append({
-                                "Student ID": student_id, "Name": student_name,
+                                "Student ID": student_id,
                                 "Grade": grade, "Year": year, "Term": term, "Subject": sub,
                                 "Marks": mark, "Status": "Draft"
                             })
@@ -340,11 +360,11 @@ with tab1:
                         save_marks_data(st.session_state.student_data)
                         st.success("ලකුණු තාවකාලිකව සුරකින ලදී (Draft Mode)!")
                     else:
-                        st.warning("කරුණාකර ශිෂ්‍ය අංකය සහ නම ඇතුළත් කරන්න.")
+                        st.warning("කරුණාකර ශිෂ්‍ය අංකය ඇතුළත් කරන්න.")
 
             with btn_col2:
                 if st.button("🔒 සම්පූර්ණයෙන් යවා Lock කරන්න (Final Submit)", type="primary", use_container_width=True):
-                    if student_id and student_name:
+                    if student_id:
                         st.session_state.student_data = st.session_state.student_data[
                             ~((st.session_state.student_data["Student ID"] == student_id) & 
                               (st.session_state.student_data["Year"] == year) &
@@ -353,7 +373,7 @@ with tab1:
                         new_rows = []
                         for sub, mark in marks_dict.items():
                             new_rows.append({
-                                "Student ID": student_id, "Name": student_name,
+                                "Student ID": student_id,
                                 "Grade": grade, "Year": year, "Term": term, "Subject": sub,
                                 "Marks": mark, "Status": "Locked"
                             })
@@ -361,7 +381,7 @@ with tab1:
                         save_marks_data(st.session_state.student_data)
                         st.success("ලකුණු සාර්ථකව පද්ධතියට එක් කර Lock කරන ලදී!")
                     else:
-                        st.warning("කරුණාකර ශිෂ්‍ය අංකය සහ නම ඇතුළත් කරන්න.")
+                        st.warning("කරුණාකර ශිෂ්‍ය අංකය ඇතුළත් කරන්න.")
 
 # ----------------------------------------------------
 # TAB 2: SUBJECT-WISE OFFICIAL PRINT FORM
@@ -400,7 +420,7 @@ with tab2:
         display_sub_df = sub_df.reset_index(drop=True)
         display_sub_df.index += 1
         display_sub_df = display_sub_df.reset_index().rename(columns={"index": "අනු අංකය", "Student ID": "විභාග අංකය"})
-        show_table = display_sub_df[["අනු අංකය", "විභාග අංකය", "Name", "Marks", "සාධන මට්ටම", "සාමාර්ථය", "ප්‍රගති මැනීම", "විශ්ලේෂණයන්"]]
+        show_table = display_sub_df[["අනු අංකය", "විභාග අංකය", "Marks", "සාධන මට්ටම", "සාමාර්ථය", "ප්‍රගති මැනීම", "විශ්ලේෂණයන්"]]
 
         st.dataframe(show_table, use_container_width=True)
 
@@ -419,7 +439,6 @@ with tab2:
             <tr>
                 <td style="border:1px solid #000; padding:5px; text-align:center;">{row['අනු අංකය']}</td>
                 <td style="border:1px solid #000; padding:5px; text-align:center;">{row['විභාග අංකය']}</td>
-                <td style="border:1px solid #000; padding:5px;">{row['Name']}</td>
                 <td style="border:1px solid #000; padding:5px; text-align:center;">{row['සාධන මට්ටම']}</td>
                 <td style="border:1px solid #000; padding:5px; text-align:center;">{row['සාමාර්ථය']}</td>
                 <td style="border:1px solid #000; padding:5px; text-align:center;">{row['ප්‍රගති මැනීම']}</td>
@@ -462,12 +481,11 @@ with tab2:
             <table>
                 <thead>
                     <tr>
-                        <th style="width:7%;">අනු අංකය</th>
-                        <th style="width:12%;">විභාග අංකය</th>
-                        <th>ශිෂ්‍යයාගේ නම</th>
-                        <th style="width:10%;">සාධන මට්ටම</th>
-                        <th style="width:10%;">සාමාර්ථය</th>
-                        <th style="width:12%;">ප්‍රගති මැනීම</th>
+                        <th style="width:10%;">අනු අංකය</th>
+                        <th style="width:20%;">විභාග අංකය</th>
+                        <th style="width:15%;">සාධන මට්ටම</th>
+                        <th style="width:15%;">සාමාර්ථය</th>
+                        <th style="width:15%;">ප්‍රගති මැනීම</th>
                         <th style="width:25%;">විශ්ලේෂණයන්</th>
                     </tr>
                 </thead>
@@ -535,10 +553,9 @@ with tab3:
             selected_student = st.selectbox("විශ්ලේෂණය සඳහා ශිෂ්‍ය අංකය තෝරන්න:", student_list, key="st_select")
             
             student_df = filtered_by_year[filtered_by_year["Student ID"] == selected_student]
-            s_name = student_df["Name"].iloc[0]
             s_grade = student_df["Grade"].iloc[0]
             
-            st.subheader(f"ශිෂ්‍යයා: {s_name} | විභාග අංකය: {selected_student} | ශ්‍රේණිය: {s_grade} | වර්ෂය: {st_year}")
+            st.subheader(f"විභාග අංකය: {selected_student} | ශ්‍රේණිය: {s_grade} | වර්ෂය: {st_year}")
             
             fig = px.bar(student_df, x="Subject", y="Marks", color="Term", barmode="group",
                          title=f"{st_year} වර්ෂයේ වාර 3 හි විෂයයන් 10 ලකුණු සංසන්දනය", text_auto=True)
@@ -590,7 +607,7 @@ with tab5:
     with col_del1:
         if st.button("🗑️ පරීක්ෂණ දත්ත සියල්ල ඉවත් කරන්න (Clear All Data)", type="secondary", use_container_width=True):
             st.session_state.student_data = pd.DataFrame(columns=[
-                "Student ID", "Name", "Grade", "Year", "Term", "Subject", "Marks", "Status"
+                "Student ID", "Grade", "Year", "Term", "Subject", "Marks", "Status"
             ])
             save_marks_data(st.session_state.student_data)
             st.success("සියලු දත්ත සාර්ථකව පද්ධතියෙන් ඉවත් කරන ලදී!")

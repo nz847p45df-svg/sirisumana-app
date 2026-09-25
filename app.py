@@ -297,7 +297,7 @@ with tab1:
                 "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
             )
             response = client.models.generate_content(
-                model="gemini-2.5-flash", contents=[img, prompt_text]
+                model="gemini-3.8-flash", contents=[img, prompt_text]
             )
             raw_json = (
                 response.text.strip()
@@ -384,7 +384,7 @@ with tab1:
             )
 
             response = client.models.generate_content(
-                model="gemini-2.5-flash", contents=[pdf_part, prompt_text]
+                model="gemini-3.8-flash", contents=[pdf_part, prompt_text]
             )
 
             raw_json = (

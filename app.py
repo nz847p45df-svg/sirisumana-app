@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -68,7 +69,7 @@ st.session_state.student_data = load_marks_data()
 st.session_state.roster_data = load_roster_data()
 
 # Header
-st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා පිරිවෙන")
+st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 
@@ -154,7 +155,7 @@ SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
     "සිංහල (Sinhala)",
     "පාලි (Pali)",
-    "සංස්කෘත (Sanskrit)",
+    "සංස්ක්‍රත (Sanskrit)",
     "ගණිතය (Maths)",
     "ඉංග්‍රීසි (English)",
     "ඉතිහාසය (History)",
@@ -277,7 +278,10 @@ with tab1:
         st.error("කරුණාකර API Key එක සකසන්න.")
       else:
         try:
-          with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී..."):
+          with st.spinner(
+              "AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී (ටිකක් රැඳී"
+              " සිටින්න)..."
+          ):
             client = genai.Client(api_key=GEMINI_API_KEY)
             prompt_text = (
                 "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම"
@@ -296,9 +300,23 @@ with tab1:
                 ' (Geog. Phy.)": 0}}]\n'
                 "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
             )
-            response = client.models.generate_content(
-                model="gemini-3.8-flash", contents=[img, prompt_text]
-            )
+
+            # Retry Logic for 503 / High Demand Errors
+            max_retries = 3
+            response = None
+            for attempt in range(max_retries):
+              try:
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash", contents=[img, prompt_text]
+                )
+                break
+              except Exception as err:
+                if "503" in str(err) and attempt < max_retries - 1:
+                  time.sleep(3)
+                  continue
+                else:
+                  raise err
+
             raw_json = (
                 response.text.strip()
                 .replace("```json", "")
@@ -357,7 +375,10 @@ with tab1:
         st.error("කරුණාකර API Key එක සකසන්න.")
       else:
         try:
-          with st.spinner("AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී..."):
+          with st.spinner(
+              "AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී (ටිකක් රැඳී"
+              " සිටින්න)..."
+          ):
             client = genai.Client(api_key=GEMINI_API_KEY)
             pdf_bytes = uploaded_pdf.read()
 
@@ -383,9 +404,21 @@ with tab1:
                 "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
             )
 
-            response = client.models.generate_content(
-                model="gemini-3.8-flash", contents=[pdf_part, prompt_text]
-            )
+            # Retry Logic for 503 / High Demand Errors
+            max_retries = 3
+            response = None
+            for attempt in range(max_retries):
+              try:
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash", contents=[pdf_part, prompt_text]
+                )
+                break
+              except Exception as err:
+                if "503" in str(err) and attempt < max_retries - 1:
+                  time.sleep(3)
+                  continue
+                else:
+                  raise err
 
             raw_json = (
                 response.text.strip()
@@ -548,7 +581,7 @@ with tab1:
 # TAB 2: SUBJECT-WISE OFFICIAL PRINT FORM
 # ----------------------------------------------------
 with tab2:
-  st.header("📄ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
+  st.header("📄 මූලික පිරිවෙණ වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
 
   col_sel1, col_sel2, col_sel3, col_sel4 = st.columns(4)
   with col_sel1:
@@ -653,7 +686,7 @@ with tab2:
             <div class="header-box">
                 <h2 style="margin:2px;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
                 <h3 style="margin:2px;">විභාග අංශය</h3>
-                <p style="margin:2px;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
+                <p style="margin:2px;">මූලික පිරිවෙණ වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
                     <span>ශ්‍රේණිය :- {sel_grade}</span>
                     <span>වර්ෂය :- {sel_year}</span>

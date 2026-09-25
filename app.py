@@ -20,7 +20,7 @@ if "student_data" not in st.session_state:
     ])
 
 # Header
-st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
+st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 

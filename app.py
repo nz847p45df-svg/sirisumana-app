@@ -25,9 +25,8 @@ data = load_data()
 
 # ----------------------------------------------------
 # 🔑 ADMIN PASSWORD SETTING
-# මෙතන තියෙන "your_secret_password" වෙනුවට ඔයාගේ පාස්වර්ඩ් එක දාන්න!
 # ----------------------------------------------------
-ADMIN_PASSWORD = "your_secret_password" 
+ADMIN_PASSWORD = "sirisumana123" 
 
 # Header
 st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
@@ -50,6 +49,19 @@ if role == "විදුහල්පති/Admin (Principal)":
 # Tab Layout
 tab1, tab2, tab3 = st.tabs(["📝 දත්ත ඇතුළත් කිරීම", "📊 දත්ත නිරීක්ෂණය / සංස්කරණය", "⚙️ Admin පාලක පුවරුව"])
 
+# List of all subjects
+SUBJECTS = [
+    "ගණිතය (Maths)",
+    "ත්‍රිපිටක ධර්මය (Tripitaka)",
+    "පාලි (Pali)",
+    "සිංහල (Sinhala)",
+    "ඉංග්‍රීසි (English)",
+    "සෞඛ්‍යය (Health Sci.)",
+    "ඉතිහාසය (History)",
+    "සමාජ අධ්‍යයනය (Social Sci.)",
+    "භූගෝල විද්‍යාව (Geog. Phy.)"
+]
+
 # ----------------------------------------------------
 # TAB 1: DATA ENTRY
 # ----------------------------------------------------
@@ -63,11 +75,13 @@ with tab1:
             index_no = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය:")
             name = st.text_input("ශිෂ්‍යයාගේ නම:")
             grade = st.selectbox("ශ්‍රේණිය:", ["1 ශ්‍රේණිය", "2 ශ්‍රේණිය", "3 ශ්‍රේණිය", "4 ශ්‍රේණිය", "5 ශ්‍රේණිය"])
+            term = st.selectbox("වාරය:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"])
             
         with col2:
-            maths_marks = st.number_input("ගණිතය ලකුණු:", min_value=0, max_value=100, value=0)
-            health_marks = st.number_input("සෞඛ්‍යය ලකුණු:", min_value=0, max_value=100, value=0)
-            sinhala_marks = st.number_input("සිංහල ලකුණු:", min_value=0, max_value=100, value=0)
+            st.subheader("විෂයයන් සහ ලකුණු")
+            marks_dict = {}
+            for sub in SUBJECTS:
+                marks_dict[sub] = st.number_input(f"{sub}:", min_value=0, max_value=100, value=0, step=1)
             
         submitted = st.form_submit_button("දත්ත සුරකින්න (Save)")
         
@@ -77,14 +91,13 @@ with tab1:
                     "index_no": index_no,
                     "name": name,
                     "grade": grade,
-                    "maths": maths_marks,
-                    "health": health_marks,
-                    "sinhala": sinhala_marks,
+                    "term": term,
+                    "marks": marks_dict,
                     "is_locked": False # Default unlocked
                 }
                 data.append(new_record)
                 save_data(data)
-                st.success(f"{name} ගේ දත්ත සාර්ථකව සුරකින ලදී!")
+                st.success(f"{name} ගේ {term} ලකුණු සාර්ථකව සුරකින ලදී!")
             else:
                 st.error("කරුණාකර ඇතුළත් වීමේ අංකය සහ නම ඇතුළත් කරන්න.")
 
@@ -95,32 +108,35 @@ with tab2:
     st.header("ඇතුළත් කළ දත්ත නිරීක්ෂණය")
     
     if len(data) > 0:
-        df = pd.DataFrame(data)
-        
-        # Display Columns mapping
-        df_display = df.rename(columns={
-            "index_no": "අංකය",
-            "name": "නම",
-            "grade": "ශ්‍රේණිය",
-            "maths": "ගණිතය",
-            "health": "සෞඛ්‍යය",
-            "sinhala": "සිංහල",
-            "is_locked": "Locked Status"
-        })
-        
+        flattened_data = []
+        for item in data:
+            row = {
+                "අංකය": item["index_no"],
+                "නම": item["name"],
+                "ශ්‍රේණිය": item["grade"],
+                "වාරය": item.get("term", "-"),
+                "Locked Status": "🔒 Locked" if item.get("is_locked", False) else "🔓 Unlocked"
+            }
+            # Add subject marks
+            if "marks" in item:
+                for sub_name, mark in item["marks"].items():
+                    row[sub_name] = mark
+            flattened_data.append(row)
+
+        df_display = pd.DataFrame(flattened_data)
         st.dataframe(df_display, use_container_width=True)
         
         st.divider()
         st.subheader("🔒 දත්ත Lock කිරීම (ගුරුවරුන් සඳහා)")
         st.info("දත්ත සියල්ල නිවැරදි නම්, අදාළ ශිෂ්‍යයාගේ දත්ත වෙනස් කළ නොහැකි ලෙස Lock කළ හැක.")
         
-        unlocked_students = [item["name"] for item in data if not item.get("is_locked", False)]
+        unlocked_students = [f"{item['name']} ({item.get('term', '')})" for item in data if not item.get("is_locked", False)]
         
         if unlocked_students:
             student_to_lock = st.selectbox("Lock කිරීමට ශිෂ්‍යයා තෝරන්න:", unlocked_students)
             if st.button("තෝරාගත් ශිෂ්‍යයාගේ දත්ත Lock කරන්න"):
                 for item in data:
-                    if item["name"] == student_to_lock:
+                    if f"{item['name']} ({item.get('term', '')})" == student_to_lock:
                         item["is_locked"] = True
                         break
                 save_data(data)
@@ -143,13 +159,13 @@ with tab3:
         
         # Feature 1: Unlock Data
         st.subheader("🔓 Lock කළ දත්ත නැවත Unlock කිරීම")
-        locked_students = [item["name"] for item in data if item.get("is_locked", False)]
+        locked_students = [f"{item['name']} ({item.get('term', '')})" for item in data if item.get("is_locked", False)]
         
         if locked_students:
             student_to_unlock = st.selectbox("Unlock කිරීමට ශිෂ්‍යයා තෝරන්න:", locked_students)
             if st.button("Unlock කරන්න"):
                 for item in data:
-                    if item["name"] == student_to_unlock:
+                    if f"{item['name']} ({item.get('term', '')})" == student_to_unlock:
                         item["is_locked"] = False
                         break
                 save_data(data)

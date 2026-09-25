@@ -19,28 +19,8 @@ if "student_data" not in st.session_state:
         "Student ID", "Name", "Grade", "Term", "Subject", "Marks", "Status"
     ])
 
-# CSS for Print Mode (Hides UI elements during printing)
-st.markdown("""
-    <style>
-    @media print {
-        /* Hide Streamlit elements during print */
-        header, footer, .stSidebar, .stTabs, .stSelectbox, .stButton, button, [data-testid="stHeader"] {
-            display: none !important;
-        }
-        .main .block-container {
-            padding: 0px !important;
-            margin: 0px !important;
-        }
-        .printable-area {
-            display: block !important;
-            width: 100% !important;
-        }
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # Header
-st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
+st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 
@@ -197,38 +177,6 @@ with tab2:
     if sub_df.empty:
         st.info("තෝරාගත් පන්තිය, වාරය සහ විෂය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
     else:
-        # Print Button (Triggers window.print())
-        st.components.v1.html("""
-            <button onclick="window.print()" style="
-                background-color: #0d6efd;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                font-size: 16px;
-                font-weight: bold;
-                border-radius: 5px;
-                cursor: pointer;
-                width: 100%;
-            ">🖨️ මෙම වාර්තාව Print කරන්න / PDF ලෙස ලබාගන්න</button>
-        """, height=50)
-
-        # Printable HTML Container
-        st.markdown(f"""
-        <div class="printable-area" style="font-family: 'Sinhala', sans-serif;">
-            <div style="text-align: center; border: 2px solid #000; padding: 15px; background-color: #fcfcfc;">
-                <h2 style="margin:0;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
-                <h3 style="margin:5px;">විභාග අංශය</h3>
-                <p style="margin:0; font-weight:bold;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term})</p>
-                <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold;">
-                    <span>ශ්‍රේණිය :- {sel_grade}</span>
-                    <span>විෂය :- {sel_subject}</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.write("")
-        
         # Calculate Grading & Progress
         sub_df["සාමාර්ථය"] = sub_df["Marks"].apply(get_grade)
         sub_df["සාධන මට්ටම"] = sub_df["Marks"].apply(lambda x: f"{x}%")
@@ -239,43 +187,127 @@ with tab2:
         display_sub_df = sub_df.reset_index(drop=True)
         display_sub_df.index += 1
         display_sub_df = display_sub_df.reset_index().rename(columns={"index": "අනු අංකය", "Student ID": "විභාග අංකය"})
-        
         show_table = display_sub_df[["අනු අංකය", "විභාග අංකය", "Name", "Marks", "සාධන මට්ටම", "සාමාර්ථය", "ප්‍රගති මැනීම", "විශ්ලේෂණයන්"]]
-        st.dataframe(show_table, use_container_width=True)
 
-        st.divider()
+        # Range calculations
+        r1_30 = len(sub_df[(sub_df["Marks"] >= 1) & (sub_df["Marks"] <= 30)])
+        r30_40 = len(sub_df[(sub_df["Marks"] > 30) & (sub_df["Marks"] <= 40)])
+        r40_50 = len(sub_df[(sub_df["Marks"] > 40) & (sub_df["Marks"] <= 50)])
+        r50_60 = len(sub_df[(sub_df["Marks"] > 50) & (sub_df["Marks"] <= 60)])
+        r60_70 = len(sub_df[(sub_df["Marks"] > 60) & (sub_df["Marks"] <= 70)])
+        r70_80 = len(sub_df[(sub_df["Marks"] > 70) & (sub_df["Marks"] <= 80)])
+        r80_90 = len(sub_df[(sub_df["Marks"] > 80) & (sub_df["Marks"] <= 90)])
+        r90_100 = len(sub_df[(sub_df["Marks"] > 90) & (sub_df["Marks"] <= 100)])
 
-        # Marks Range Distribution Table
-        col_dist1, col_dist2 = st.columns([1, 1])
-        
-        with col_dist1:
-            st.subheader("📊 ලකුණු පරාස අනුව සාධන මට්ටමට ළඟාවීම")
-            ranges = [
-                ("01-30", len(sub_df[(sub_df["Marks"] >= 1) & (sub_df["Marks"] <= 30)])),
-                ("30-40", len(sub_df[(sub_df["Marks"] > 30) & (sub_df["Marks"] <= 40)])),
-                ("40-50", len(sub_df[(sub_df["Marks"] > 40) & (sub_df["Marks"] <= 50)])),
-                ("50-60", len(sub_df[(sub_df["Marks"] > 50) & (sub_df["Marks"] <= 60)])),
-                ("60-70", len(sub_df[(sub_df["Marks"] > 60) & (sub_df["Marks"] <= 70)])),
-                ("70-80", len(sub_df[(sub_df["Marks"] > 70) & (sub_df["Marks"] <= 80)])),
-                ("80-90", len(sub_df[(sub_df["Marks"] > 80) & (sub_df["Marks"] <= 90)])),
-                ("90-100", len(sub_df[(sub_df["Marks"] > 90) & (sub_df["Marks"] <= 100)]))
-            ]
-            dist_df = pd.DataFrame(ranges, columns=["ලකුණු පරාසය", "සාධන මට්ටමට ළඟාවීම (සිසුන් ගණන)"])
-            st.table(dist_df)
+        # Construct Printable HTML String
+        rows_html = ""
+        for idx, row in show_table.iterrows():
+            rows_html += f"""
+            <tr>
+                <td style="border:1px solid #000; padding:5px; text-align:center;">{row['අනු අංකය']}</td>
+                <td style="border:1px solid #000; padding:5px; text-align:center;">{row['විභාග අංකය']}</td>
+                <td style="border:1px solid #000; padding:5px;">{row['Name']}</td>
+                <td style="border:1px solid #000; padding:5px; text-align:center;">{row['සාධන මට්ටම']}</td>
+                <td style="border:1px solid #000; padding:5px; text-align:center;">{row['සාමාර්ථය']}</td>
+                <td style="border:1px solid #000; padding:5px; text-align:center;">{row['ප්‍රගති මැනීම']}</td>
+                <td style="border:1px solid #000; padding:5px;">{row['විශ්ලේෂණයන්']}</td>
+            </tr>
+            """
 
-        with col_dist2:
-            st.subheader("📝 ප්‍රතිඵල සමාලෝචනය පිළිබඳ පොදු විශ්ලේෂණ සටහන")
-            st.text_area("විෂයභාර ගුරුභවතාගේ නිගමන හා සටහන්:", value="මෙම වාරයේ පන්තියේ සමස්ත සාධන මට්ටම යහපත් තත්වයක පවතී. අඩු ලකුණු ලබාගත් සිසුන් සඳහා විශේෂ වැඩසටහන් ක්‍රියාත්මක කළ යුතුය.", height=200)
+        html_doc = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>ප්‍රතිඵල විශ්ලේෂණ වාර්තාව</title>
+            <style>
+                body {{ font-family: 'Arial', sans-serif; padding: 20px; color: #000; }}
+                .header-box {{ border: 2px solid #000; padding: 10px; text-align: center; font-weight: bold; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                th, td {{ border: 1px solid #000; padding: 6px; text-align: left; font-size: 13px; }}
+                th {{ background-color: #f2f2f2; text-align: center; }}
+                .flex-container {{ display: flex; justify-content: space-between; margin-top: 20px; }}
+                .dist-table {{ width: 45%; }}
+                .notes-box {{ width: 50%; border: 1px solid #000; padding: 10px; font-size: 13px; }}
+                .signatures {{ margin-top: 50px; display: flex; justify-content: space-between; text-align: center; font-weight: bold; font-size: 12px; }}
+                @media print {{
+                    .no-print {{ display: none; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <button class="no-print" onclick="window.print()" style="background-color:#0d6efd; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-bottom:15px; width:100%;">🖨️ මුද්‍රණය කරන්න (Print / Save as PDF)</button>
+            
+            <div class="header-box">
+                <h2 style="margin:2px;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
+                <h3 style="margin:2px;">විභාග අංශය</h3>
+                <p style="margin:2px;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term})</p>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <span>ශ්‍රේණිය :- {sel_grade}</span>
+                    <span>විෂය :- {sel_subject}</span>
+                </div>
+            </div>
 
-        # Official Signatures Section
-        st.markdown("""
-        <br><br>
-        <div style="display: flex; justify-content: space-between; text-align: center; font-weight: bold; margin-top: 30px;">
-            <div>...............................................<br>(විෂයභාර ගුරුභවතා)</div>
-            <div>...............................................<br>(අංශ ප්‍රධාන ගුරුභවතා)</div>
-            <div>...............................................<br>(පරිවේණාධිපති හිමි)</div>
-        </div>
-        """, unsafe_allow_html=True)
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:7%;">අනු අංකය</th>
+                        <th style="width:12%;">විභාග අංකය</th>
+                        <th>ශිෂ්‍යයාගේ නම</th>
+                        <th style="width:10%;">සාධන මට්ටම</th>
+                        <th style="width:10%;">සාමාර්ථය</th>
+                        <th style="width:12%;">ප්‍රගති මැනීම</th>
+                        <th style="width:25%;">විශ්ලේෂණයන්</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+
+            <div class="flex-container">
+                <div class="dist-table">
+                    <h4>📊 ලකුණු පරාස අනුව සාධන මට්ටමට ළඟාවීම</h4>
+                    <table>
+                        <tr><th>ලකුණු පරාසය</th><th>සිසුන් ගණන</th></tr>
+                        <tr><td>01-30</td><td style="text-align:center;">{r1_30}</td></tr>
+                        <tr><td>30-40</td><td style="text-align:center;">{r30_40}</td></tr>
+                        <tr><td>40-50</td><td style="text-align:center;">{r40_50}</td></tr>
+                        <tr><td>50-60</td><td style="text-align:center;">{r50_60}</td></tr>
+                        <tr><td>60-70</td><td style="text-align:center;">{r60_70}</td></tr>
+                        <tr><td>70-80</td><td style="text-align:center;">{r70_80}</td></tr>
+                        <tr><td>80-90</td><td style="text-align:center;">{r80_90}</td></tr>
+                        <tr><td>90-100</td><td style="text-align:center;">{r90_100}</td></tr>
+                    </table>
+                </div>
+
+                <div class="notes-box">
+                    <h4>📝 ප්‍රතිඵල සමාලෝචනය පිළිබඳ පොදු විශ්ලේෂණ සටහන</h4>
+                    <p>විෂයභාර ගුරුභවතාගේ නිගමන හා සටහන්:</p>
+                    <p style="margin-top:20px; border-bottom:1px dotted #000; min-height:80px;">මෙම වාරයේ පන්තියේ සමස්ත සාධන මට්ටම යහපත් තත්වයක පවතී. අඩු ලකුණු ලබාගත් සිසුන් සඳහා විශේෂ වැඩසටහන් ක්‍රියාත්මක කළ යුතුය.</p>
+                </div>
+            </div>
+
+            <div class="signatures">
+                <div>...............................................<br>(විෂයභාර ගුරුභවතා)</div>
+                <div>...............................................<br>(අංශ ප්‍රධාන ගුරුභවතා)</div>
+                <div>...............................................<br>(පරිවේණාධිපති හිමි)</div>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Provide Download Option as Printable File
+        st.download_button(
+            label="📥 නිල වාර්තාව Download කරගන්න (Printable Document)",
+            data=html_doc,
+            file_name=f"{sel_grade}_{sel_subject}_Report.html",
+            mime="text/html",
+            type="primary",
+            use_container_width=True
+        )
+
+        st.info("💡 'Download' කරගත් File එක Phone/Computer එකෙන් Open කර 'Print' දුන්විට නිල ලේඛනය A4 Sheet එකට ඉතාම පිරිසිදුව Print වේ!")
 
 # ----------------------------------------------------
 # TAB 3: STUDENT-WISE DEEP ANALYSIS

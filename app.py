@@ -1,154 +1,173 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import json
 import os
 
-st.set_page_config(
-    page_title="සිරි සුමන පිරිවෙන් ලකුණු පද්ධතිය",
-    page_icon="📚",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# Page Config
+st.set_page_config(page_title="ශ්‍රී සුමන ප්‍රාථමික පිරිවෙන - ලේඛන පද්ධතිය", layout="wide")
 
-st.markdown("""
-    <style>
-    .main-title {
-        text-align: center;
-        color: #8B0000;
-        font-size: 22px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    .sub-title {
-        text-align: center;
-        color: #444;
-        font-size: 15px;
-        margin-bottom: 15px;
-    }
-    .stButton>button {
-        width: 100%;
-        background-color: #8B0000;
-        color: white;
-        font-weight: bold;
-        border-radius: 8px;
-        height: 45px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# File Path
+DATA_FILE = "student_data.json"
 
-st.markdown("<div class='main-title'>මහ/දෙනු/සිරිසුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>📱 ජංගම දුරකථන ලකුණු ඇතුළත් කිරීම් හා විශ්ලේෂණ පද්ධතිය</div>", unsafe_allow_html=True)
+# Helper Functions to Load and Save Data
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
-DATA_FILE = "student_marks_db.csv"
+def save_data(data):
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
-if os.path.exists(DATA_FILE):
-    df = pd.read_csv(DATA_FILE)
-else:
-    df = pd.DataFrame(columns=[
-        "Index No", "Student Name", "Grade", "Term", 
-        "Pali", "Sanskrit", "Tripi. Studies", "Sinhala", 
-        "Mathematics", "English", "Health Sci.", "History", "Social Sci.", "Geog. Phy."
-    ])
+# Load existing data
+data = load_data()
 
-def get_grade_symbol(marks):
-    try:
-        m = float(marks)
-        if m >= 75: return "A (ඉතා හොඳයි)"
-        elif m >= 65: return "B (හොඳයි)"
-        elif m >= 50: return "C (සාමාන්‍යයි)"
-        elif m >= 35: return "S (ප්‍රමාණවත්)"
-        else: return "W/F (සංවර්ධනය විය යුතුයි)"
-    except:
-        return "N/A"
+# ----------------------------------------------------
+# 🔑 ADMIN PASSWORD SETTING
+# මෙතන තියෙන "your_secret_password" වෙනුවට ඔයාගේ පාස්වර්ඩ් එක දාන්න!
+# ----------------------------------------------------
+ADMIN_PASSWORD = "your_secret_password" 
 
-menu = [
-    "📝 ලකුණු ඇතුළත් කිරීම (Data Input)", 
-    "📊 විෂයානුබද්ධ විශ්ලේෂණය (Subject Analysis)", 
-    "📈 ප්‍රගති ප්‍රස්ථාර (Progress Graphs)", 
-    "📋 සියලුම සටහන් (All Records)"
-]
-choice = st.selectbox("මෙනුව තෝරන්න (Select Menu):", menu)
+# Header
+st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
+st.subheader("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය")
 
-st.write("---")
+# Sidebar - Role Selection
+st.sidebar.header("🔑 පද්ධති ප්‍රවේශය (Login)")
+role = st.sidebar.radio("ඔබගේ කාර්යභාරය තෝරන්න:", ["ගුරුභවතා (Teacher)", "විදුහල්පති/Admin (Principal)"])
 
-if choice == "📝 ලකුණු ඇතුළත් කිරීම (Data Input)":
-    st.subheader("📲 නව ලකුණු ඇතුළත් කිරීම")
+is_admin = False
+
+if role == "විදුහල්පති/Admin (Principal)":
+    entered_password = st.sidebar.text_input("Admin මුරපදය (Password):", type="password")
+    if entered_password == ADMIN_PASSWORD:
+        is_admin = True
+        st.sidebar.success("Admin විදියට සාර්ථකව Log වුණා!")
+    elif entered_password != "":
+        st.sidebar.error("මුරපදය වැරදියි!")
+
+# Tab Layout
+tab1, tab2, tab3 = st.tabs(["📝 දත්ත ඇතුළත් කිරීම", "📊 දත්ත නිරීක්ෂණය / සංස්කරණය", "⚙️ Admin පාලක පුවරුව"])
+
+# ----------------------------------------------------
+# TAB 1: DATA ENTRY
+# ----------------------------------------------------
+with tab1:
+    st.header("නව ශිෂ්‍ය දත්ත ඇතුළත් කිරීම")
     
-    with st.form("mobile_mark_entry"):
-        index_no = st.text_input("විභාග අංකය (Index No)")
-        student_name = st.text_input("ශිෂ්‍යයාගේ නම")
-        grade = st.selectbox("ශ්‍රේණිය", ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5"])
-        term = st.selectbox("වාරය", ["1st Term", "2nd Term", "3rd Term"])
+    with st.form("student_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
         
-        st.write("---")
-        st.write("**විෂය ලකුණු:**")
+        with col1:
+            index_no = st.text_input("ඇතුළත් වීමේ අංකය / විභාග අංකය:")
+            name = st.text_input("ශිෂ්‍යයාගේ නම:")
+            grade = st.selectbox("ශ්‍රේණිය:", ["1 ශ්‍රේණිය", "2 ශ්‍රේණිය", "3 ශ්‍රේණිය", "4 ශ්‍රේණිය", "5 ශ්‍රේණිය"])
+            
+        with col2:
+            maths_marks = st.number_input("ගණිතය ලකුණු:", min_value=0, max_value=100, value=0)
+            health_marks = st.number_input("සෞඛ්‍යය ලකුණු:", min_value=0, max_value=100, value=0)
+            sinhala_marks = st.number_input("සිංහල ලකුණු:", min_value=0, max_value=100, value=0)
+            
+        submitted = st.form_submit_button("දත්ත සුරකින්න (Save)")
         
-        pali = st.number_input("පාලි (Pali)", 0, 100, 0)
-        sanskrit = st.number_input("සංස්කෘත (Sanskrit)", 0, 100, 0)
-        tripi = st.number_input("ත්‍රිපිටක ධර්මය (Tripi. Studies)", 0, 100, 0)
-        sinhala = st.number_input("සිංහල (Sinhala)", 0, 100, 0)
-        maths = st.number_input("ගණිතය (Mathematics)", 0, 100, 0)
-        english = st.number_input("ඉංග්‍රීසි (English)", 0, 100, 0)
-        health = st.number_input("සෞඛ්‍යය (Health Sci.)", 0, 100, 0)
-        history = st.number_input("ඉතිහාසය (History)", 0, 100, 0)
-        social = st.number_input("සමාජ අධ්‍යයනය (Social Sci.)", 0, 100, 0)
-        geog = st.number_input("භූගෝල විද්‍යාව (Geog. Phy.)", 0, 100, 0)
-
-        submitted = st.form_submit_button("💾 ලකුණු සුරකින්න (Save)")
-
         if submitted:
-            new_row = {
-                "Index No": index_no, "Student Name": student_name, "Grade": grade, "Term": term,
-                "Pali": pali, "Sanskrit": sanskrit, "Tripi. Studies": tripi, "Sinhala": sinhala,
-                "Mathematics": maths, "English": english, "Health Sci.": health, "History": history,
-                "Social Sci.": social, "Geog. Phy.": geog
-            }
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            df.to_csv(DATA_FILE, index=False)
-            st.success("✅ ලකුණු සාර්ථකව පද්ධතියට ඇතුළත් විය!")
+            if index_no and name:
+                new_record = {
+                    "index_no": index_no,
+                    "name": name,
+                    "grade": grade,
+                    "maths": maths_marks,
+                    "health": health_marks,
+                    "sinhala": sinhala_marks,
+                    "is_locked": False # Default unlocked
+                }
+                data.append(new_record)
+                save_data(data)
+                st.success(f"{name} ගේ දත්ත සාර්ථකව සුරකින ලදී!")
+            else:
+                st.error("කරුණාකර ඇතුළත් වීමේ අංකය සහ නම ඇතුළත් කරන්න.")
 
-elif choice == "📊 විෂයානුබද්ධ විශ්ලේෂණය (Subject Analysis)":
-    st.subheader("📊 විෂය විශ්ලේෂණ වාර්තාව")
-    if df.empty:
-        st.info("දත්ත ඇතුළත් කර නොමැත.")
-    else:
-        selected_grade = st.selectbox("ශ්‍රේණිය තෝරන්න", df["Grade"].unique())
-        selected_term = st.selectbox("වාරය තෝරන්න", df["Term"].unique())
-        subject_list = ["Mathematics", "Sinhala", "Pali", "Sanskrit", "English", "Health Sci.", "History", "Social Sci.", "Geog. Phy."]
-        selected_subject = st.selectbox("විශ්ලේෂණය කළ යුතු විෂය", subject_list)
-
-        filtered_df = df[(df["Grade"] == selected_grade) & (df["Term"] == selected_term)]
-
-        if not filtered_df.empty:
-            analysis_df = filtered_df[["Index No", "Student Name", selected_subject]].copy()
-            analysis_df["තත්ත්වය"] = analysis_df[selected_subject].apply(get_grade_symbol)
-            
-            st.dataframe(analysis_df, use_container_width=True)
-
-            avg_score = analysis_df[selected_subject].mean()
-            st.metric("පන්තියේ සාමාන්‍යය", f"{avg_score:.1f}")
-
-            grade_counts = analysis_df["තත්ත්වය"].value_counts().reset_index()
-            grade_counts.columns = ["තත්ත්වය", "ශිෂ්‍ය ගණන"]
-            
-            fig = px.bar(grade_counts, x="තත්ත්වය", y="ශිෂ්‍ය ගණන", color="තත්ත්වය", title="සාමාර්ථ බෙදීයාම")
-            st.plotly_chart(fig, use_container_width=True)
-
-elif choice == "📈 ප්‍රගති ප්‍රස්ථාර (Progress Graphs)":
-    st.subheader("📈 වාරාන්තර ප්‍රගතිය")
-    if not df.empty:
-        selected_student = st.selectbox("ශිෂ්‍යයා තෝරන්න", df["Student Name"].unique())
-        st_df = df[df["Student Name"] == selected_student]
+# ----------------------------------------------------
+# TAB 2: DATA VIEW & LOCK SYSTEM
+# ----------------------------------------------------
+with tab2:
+    st.header("ඇතුළත් කළ දත්ත නිරීක්ෂණය")
+    
+    if len(data) > 0:
+        df = pd.DataFrame(data)
         
-        if not st_df.empty:
-            subject_cols = ["Pali", "Sanskrit", "Tripi. Studies", "Sinhala", "Mathematics", "English", "Health Sci.", "History", "Social Sci.", "Geog. Phy."]
-            melted_df = pd.melt(st_df, id_vars=["Term"], value_vars=subject_cols, var_name="Subject", value_name="Marks")
+        # Display Columns mapping
+        df_display = df.rename(columns={
+            "index_no": "අංකය",
+            "name": "නම",
+            "grade": "ශ්‍රේණිය",
+            "maths": "ගණිතය",
+            "health": "සෞඛ්‍යය",
+            "sinhala": "සිංහල",
+            "is_locked": "Locked Status"
+        })
+        
+        st.dataframe(df_display, use_container_width=True)
+        
+        st.divider()
+        st.subheader("🔒 දත්ත Lock කිරීම (ගුරුවරුන් සඳහා)")
+        st.info("දත්ත සියල්ල නිවැරදි නම්, අදාළ ශිෂ්‍යයාගේ දත්ත වෙනස් කළ නොහැකි ලෙස Lock කළ හැක.")
+        
+        unlocked_students = [item["name"] for item in data if not item.get("is_locked", False)]
+        
+        if unlocked_students:
+            student_to_lock = st.selectbox("Lock කිරීමට ශිෂ්‍යයා තෝරන්න:", unlocked_students)
+            if st.button("තෝරාගත් ශිෂ්‍යයාගේ දත්ත Lock කරන්න"):
+                for item in data:
+                    if item["name"] == student_to_lock:
+                        item["is_locked"] = True
+                        break
+                save_data(data)
+                st.success(f"{student_to_lock} ගේ දත්ත සාර්ථකව Lock කරන ලදී!")
+                st.rerun()
+        else:
+            st.write("සියලුම ශිෂ්‍යයින්ගේ දත්ත දැනටමත් Lock කර ඇත.")
             
-            fig_progress = px.line(melted_df, x="Subject", y="Marks", color="Term", markers=True)
-            st.plotly_chart(fig_progress, use_container_width=True)
+    else:
+        st.warning("තවමත් කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
 
-elif choice == "📋 සියලුම සටහන් (All Records)":
-    st.subheader("📋 සමස්ත ලකුණු ලැයිස්තුව")
-    st.dataframe(df, use_container_width=True)
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Excel/CSV Download", data=csv, file_name="SiriSumana_Marks.csv", mime="text/csv")
+# ----------------------------------------------------
+# TAB 3: ADMIN CONTROLS (UNLOCK & CLEAR ALL)
+# ----------------------------------------------------
+with tab3:
+    st.header("⚙️ Admin පාලන කොටස")
+    
+    if is_admin:
+        st.success("ඔබ Admin ලෙස ප්‍රවේශ වී ඇත. පහත විශේෂ බලතල භාවිතා කළ හැක.")
+        
+        # Feature 1: Unlock Data
+        st.subheader("🔓 Lock කළ දත්ත නැවත Unlock කිරීම")
+        locked_students = [item["name"] for item in data if item.get("is_locked", False)]
+        
+        if locked_students:
+            student_to_unlock = st.selectbox("Unlock කිරීමට ශිෂ්‍යයා තෝරන්න:", locked_students)
+            if st.button("Unlock කරන්න"):
+                for item in data:
+                    if item["name"] == student_to_unlock:
+                        item["is_locked"] = False
+                        break
+                save_data(data)
+                st.success(f"{student_to_unlock} ගේ දත්ත නැවත Unlock කරන ලදී!")
+                st.rerun()
+        else:
+            st.info("දැනට Lock කළ දත්ත කිසිවක් නැත.")
+            
+        st.divider()
+        
+        # Feature 2: Clear All Testing Data
+        st.subheader("🗑️ පරීක්ෂණ දත්ත සම්පූර්ණයෙන්ම ඉවත් කිරීම (Reset System)")
+        st.warning("අවධානයයි: මෙය මගින් පද්ධතියේ ඇති සියලුම ටෙස්ට් දත්ත මකා දැමෙනු ඇත!")
+        
+        if st.button("සියලුම දත්ත මකා දමන්න (Clear All Data)"):
+            save_data([])
+            st.success("සියලුම දත්ත සාර්ථකව මකා දැමීය!")
+            st.rerun()
+            
+    else:
+        st.error("මෙම කොටස භාවිතා කිරීමට Admin මුරපදය (Password) ඇතුළත් කර Log වෙන්න.")

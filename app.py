@@ -154,7 +154,7 @@ SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
     "සිංහල (Sinhala)",
     "පාලි (Pali)",
-    "සංස්ක්‍රත (Sanskrit)",
+    "සංස්කෘත (Sanskrit)",
     "ගණිතය (Maths)",
     "ඉංග්‍රීසි (English)",
     "ඉතිහාසය (History)",

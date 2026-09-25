@@ -19,6 +19,26 @@ if "student_data" not in st.session_state:
         "Student ID", "Name", "Grade", "Term", "Subject", "Marks", "Status"
     ])
 
+# CSS for Print Mode (Hides UI elements during printing)
+st.markdown("""
+    <style>
+    @media print {
+        /* Hide Streamlit elements during print */
+        header, footer, .stSidebar, .stTabs, .stSelectbox, .stButton, button, [data-testid="stHeader"] {
+            display: none !important;
+        }
+        .main .block-container {
+            padding: 0px !important;
+            margin: 0px !important;
+        }
+        .printable-area {
+            display: block !important;
+            width: 100% !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Header
 st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා ප්‍රාථමික පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
@@ -177,15 +197,32 @@ with tab2:
     if sub_df.empty:
         st.info("තෝරාගත් පන්තිය, වාරය සහ විෂය සඳහා කිසිදු දත්තයක් ඇතුළත් කර නොමැත.")
     else:
-        # Construct Official Printable Header
+        # Print Button (Triggers window.print())
+        st.components.v1.html("""
+            <button onclick="window.print()" style="
+                background-color: #0d6efd;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 5px;
+                cursor: pointer;
+                width: 100%;
+            ">🖨️ මෙම වාර්තාව Print කරන්න / PDF ලෙස ලබාගන්න</button>
+        """, height=50)
+
+        # Printable HTML Container
         st.markdown(f"""
-        <div style="text-align: center; border: 2px solid #000; padding: 15px; background-color: #fcfcfc; font-family: 'Sinhala', sans-serif;">
-            <h2 style="margin:0;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
-            <h3 style="margin:5px;">විභාග අංශය</h3>
-            <p style="margin:0; font-weight:bold;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term})</p>
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold;">
-                <span>ශ්‍රේණිය :- {sel_grade}</span>
-                <span>විෂය :- {sel_subject}</span>
+        <div class="printable-area" style="font-family: 'Sinhala', sans-serif;">
+            <div style="text-align: center; border: 2px solid #000; padding: 15px; background-color: #fcfcfc;">
+                <h2 style="margin:0;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
+                <h3 style="margin:5px;">විභාග අංශය</h3>
+                <p style="margin:0; font-weight:bold;">මූලික පිරිවෙණ් මධ්‍යවාර පරීක්ෂණය - ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term})</p>
+                <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold;">
+                    <span>ශ්‍රේණිය :- {sel_grade}</span>
+                    <span>විෂය :- {sel_subject}</span>
+                </div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -208,7 +245,7 @@ with tab2:
 
         st.divider()
 
-        # Marks Range Distribution Table (Matching Official Form)
+        # Marks Range Distribution Table
         col_dist1, col_dist2 = st.columns([1, 1])
         
         with col_dist1:
@@ -233,7 +270,7 @@ with tab2:
         # Official Signatures Section
         st.markdown("""
         <br><br>
-        <div style="display: flex; justify-content: space-between; text-align: center; font-weight: bold;">
+        <div style="display: flex; justify-content: space-between; text-align: center; font-weight: bold; margin-top: 30px;">
             <div>...............................................<br>(විෂයභාර ගුරුභවතා)</div>
             <div>...............................................<br>(අංශ ප්‍රධාන ගුරුභවතා)</div>
             <div>...............................................<br>(පරිවේණාධිපති හිමි)</div>

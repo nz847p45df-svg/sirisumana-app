@@ -184,81 +184,122 @@ with tab0:
         st.write("මෙම පන්තියට තවමත් සිසුන් ලියාපදිංචි කර නැත.")
 
 # ----------------------------------------------------
-# TAB 1: DATA ENTRY & AI PHOTO SCANNING
+# TAB 1: DATA ENTRY (MANUAL / PHOTO / PDF)
 # ----------------------------------------------------
 with tab1:
     st.header("ශිෂ්‍ය ලකුණු ඇතුළත් කිරීම")
     
-    entry_method = st.radio("ඇතුළත් කිරීමේ ක්‍රමය තෝරන්න:", ["📸 photo එකක් upload කර ස්වයංක්‍රීයව ලකුණු ගැනීම (AI Scan)", "✍️ අතින් එකින් එක ටයිප් කිරීම (Manual Entry)"], horizontal=True)
+    entry_method = st.radio(
+        "ඇතුළත් කිරීමේ ක්‍රමය තෝරන්න:", 
+        [
+            "📸 Photo එකක් upload කර Scan කිරීම (AI Scan)", 
+            "📄 PDF File එකක් upload කර Scan කිරීම (PDF Scan)",
+            "✍️ අතින් එකින් එක ටයිප් කිරීම (Manual Entry)"
+        ], 
+        horizontal=True
+    )
     st.divider()
 
-    if "AI Scan" in entry_method:
-        st.subheader("📸 ලකුණු ලේඛනයේ ඡායාරූපයක් (Photo) මඟින් දත්ත ලබා ගැනීම")
-        st.info("💡 **ඡායාරූපය Zoom කිරීමට:** Photo එක මත ක්ලික් කරන්න නැතහොත් පහත Zoom Slider එක භාවිත කරන්න.")
+    # METHOD 1: PHOTO AI SCAN
+    if "Photo" in entry_method:
+        st.subheader("📸 ඡායාරූපයක් (Photo Image) මඟින් ලකුණු ලබා ගැනීම")
+        uploaded_img = st.file_uploader("ලකුණු පත්‍රිකාවේ Image එක Upload කරන්න (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
-        uploaded_file = st.file_uploader("ලකුණු පත්‍රිකාවේ Image එකක් Upload කරන්න (JPG/PNG)", type=["jpg", "jpeg", "png"])
-
-        if uploaded_file:
-            img = Image.open(uploaded_file)
-            with st.expander("🔍 ඡායාරූපය Zoom කර බලන්න (Image Zoom Controls)", expanded=True):
-                img_width = st.slider("ඡායාරූපයේ ප්‍රමාණය (Zoom Level):", min_value=300, max_value=1500, value=700, step=50)
-                st.image(img, caption="Upload කරන ලද ලකුණු පත්‍රිකාව", width=img_width)
+        if uploaded_img:
+            img = Image.open(uploaded_img)
+            with st.expander("🔍 ඡායාරූපය Zoom කර බලන්න", expanded=True):
+                img_width = st.slider("Zoom Level:", min_value=300, max_value=1500, value=700, step=50, key="img_zoom")
+                st.image(img, caption="Upload කරන ලද Image එක", width=img_width)
 
         col_scan1, col_scan2, col_scan3 = st.columns(3)
         with col_scan1:
-            scan_grade = st.selectbox("ශ්‍රේණිය / පන්තිය:", GRADES, key="scan_grade")
+            scan_grade = st.selectbox("ශ්‍රේණිය / පන්තිය:", GRADES, key="img_scan_grade")
         with col_scan2:
-            scan_year = st.selectbox("වර්ෂය:", YEARS, index=1, key="scan_year")
+            scan_year = st.selectbox("වර්ෂය:", YEARS, index=1, key="img_scan_year")
         with col_scan3:
-            scan_term = st.selectbox("වාරය:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="scan_term")
+            scan_term = st.selectbox("වාරය:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="img_scan_term")
 
-        if uploaded_file and st.button("🔍 Photo එක Scan කර දත්ත ලබා ගන්න", type="primary"):
-            if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY" or not GEMINI_API_KEY:
-                st.error("කරුණාකර app.py හි නිවැරදි Gemini API Key එක ඇතුළත් කරන්න.")
+        if uploaded_img and st.button("🔍 Photo එක Scan කර දත්ත ලබා ගන්න", type="primary", key="btn_img_scan"):
+            if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY":
+                st.error("කරුණාකර API Key එක සකසන්න.")
             else:
                 try:
-                    with st.spinner("AI මඟින් ඡායාරූපයේ ලකුණු පරීක්ෂා කරමින් පවතී... කරුණාකර රැඳී සිටින්න."):
+                    with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී..."):
                         client = genai.Client(api_key=GEMINI_API_KEY)
+                        prompt_text = (
+                            "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
+                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
+                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
+                            "JSON Format:\n"
+                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
+                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
+                        )
+                        response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=[img, prompt_text]
+                        )
+                        raw_json = response.text.strip().replace("```json", "").replace("```", "")
+                        extracted_students = json.loads(raw_json)
+                        
+                        new_rows = []
+                        for st_data in extracted_students:
+                            s_id = str(st_data.get("Student ID", ""))
+                            s_marks = st_data.get("Marks", {})
+                            for sub, mark in s_marks.items():
+                                if sub in SUBJECTS:
+                                    new_rows.append({
+                                        "Student ID": s_id, "Grade": scan_grade, "Year": scan_year,
+                                        "Term": scan_term, "Subject": sub,
+                                        "Marks": int(mark) if str(mark).isdigit() else 0, "Status": "Locked"
+                                    })
+                        if new_rows:
+                            extracted_df = pd.DataFrame(new_rows)
+                            st.session_state.student_data = pd.concat([st.session_state.student_data, extracted_df], ignore_index=True)
+                            save_marks_data(st.session_state.student_data)
+                            st.success("✅ Photo එකෙන් දත්ත සාර්ථකව ඇතුළත් කරගන්නා ලදී!")
+                            st.dataframe(extracted_df, use_container_width=True)
+                except Exception as e:
+                    st.error(f"දෝෂයක් සිදු විය: {str(e)}")
+
+    # METHOD 2: PDF AI SCAN
+    elif "PDF" in entry_method:
+        st.subheader("📄 PDF File එකක් මඟින් ලකුණු ලබා ගැනීම")
+        uploaded_pdf = st.file_uploader("ලකුණු පත්‍රිකාවේ PDF File එක Upload කරන්න", type=["pdf"])
+
+        col_pdf1, col_pdf2, col_pdf3 = st.columns(3)
+        with col_pdf1:
+            pdf_grade = st.selectbox("ශ්‍රේණිය / පන්තිය:", GRADES, key="pdf_scan_grade")
+        with col_pdf2:
+            pdf_year = st.selectbox("වර්ෂය:", YEARS, index=1, key="pdf_scan_year")
+        with col_pdf3:
+            pdf_term = st.selectbox("වාරය:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="pdf_scan_term")
+
+        if uploaded_pdf and st.button("📄 PDF එක Scan කර දත්ත ලබා ගන්න", type="primary", key="btn_pdf_scan"):
+            if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY":
+                st.error("කරුණාකර API Key එක සකසන්න.")
+            else:
+                try:
+                    with st.spinner("AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී..."):
+                        client = genai.Client(api_key=GEMINI_API_KEY)
+                        pdf_bytes = uploaded_pdf.read()
+                        
+                        pdf_part = types.Part.from_bytes(
+                            data=pdf_bytes,
+                            mime_type="application/pdf"
+                        )
                         
                         prompt_text = (
-                            "මෙම ඡායාරූපයෙහි ඇත්තේ ශිෂ්‍ය ලකුණු ලේඛනයකි. "
-                            "කරුණාකර මෙහි ඇති සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පමණක් පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n\n"
-                            "අවශ්‍ය විෂයන්:\n"
-                            "- ත්‍රිපිටක ධර්මය (Tripitaka)\n"
-                            "- සිංහල (Sinhala)\n"
-                            "- පාලි (Pali)\n"
-                            "- සංස්ක්‍රත (Sanskrit)\n"
-                            "- ගණිතය (Maths)\n"
-                            "- ඉංග්‍රීසි (English)\n"
-                            "- ඉතිහාසය (History)\n"
-                            "- සමාජ විද්‍යාව (Social Sci.)\n"
-                            "- සෞඛ්‍ය විද්‍යාව (Health Sci.)\n"
-                            "- භූගෝල විද්‍යාව (Geog. Phy.)\n\n"
-                            "ලකුණු නැතිනම් හෝ නොපැහැදිලි නම් 0 ලෙස යොදන්න.\n\n"
+                            "මෙම PDF ගොනුවෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
+                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
+                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
                             "JSON Format:\n"
-                            "[\n"
-                            "  {\n"
-                            '    "Student ID": "3017",\n'
-                            '    "Marks": {\n'
-                            '      "ත්‍රිපිටක ධර්මය (Tripitaka)": 48,\n'
-                            '      "සිංහල (Sinhala)": 62,\n'
-                            '      "පාලි (Pali)": 60,\n'
-                            '      "සංස්ක්‍රත (Sanskrit)": 55,\n'
-                            '      "ගණිතය (Maths)": 59,\n'
-                            '      "ඉංග්‍රීසි (English)": 31,\n'
-                            '      "ඉතිහාසය (History)": 0,\n'
-                            '      "සමාජ විද්‍යාව (Social Sci.)": 0,\n'
-                            '      "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0,\n'
-                            '      "භූගෝල විද්‍යාව (Geog. Phy.)": 0\n'
-                            "    }\n"
-                            "  }\n"
-                            "]\n"
-                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure valid JSON පමණක් ලබාදෙන්න."
+                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
+                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
                         )
                         
                         response = client.models.generate_content(
                             model="gemini-2.5-flash",
-                            contents=[img, prompt_text]
+                            contents=[pdf_part, prompt_text]
                         )
                         
                         raw_json = response.text.strip().replace("```json", "").replace("```", "")
@@ -268,30 +309,23 @@ with tab1:
                         for st_data in extracted_students:
                             s_id = str(st_data.get("Student ID", ""))
                             s_marks = st_data.get("Marks", {})
-                            
                             for sub, mark in s_marks.items():
                                 if sub in SUBJECTS:
                                     new_rows.append({
-                                        "Student ID": s_id,
-                                        "Grade": scan_grade,
-                                        "Year": scan_year,
-                                        "Term": scan_term,
-                                        "Subject": sub,
-                                        "Marks": int(mark) if str(mark).isdigit() else 0,
-                                        "Status": "Locked"
+                                        "Student ID": s_id, "Grade": pdf_grade, "Year": pdf_year,
+                                        "Term": pdf_term, "Subject": sub,
+                                        "Marks": int(mark) if str(mark).isdigit() else 0, "Status": "Locked"
                                     })
-
                         if new_rows:
                             extracted_df = pd.DataFrame(new_rows)
                             st.session_state.student_data = pd.concat([st.session_state.student_data, extracted_df], ignore_index=True)
                             save_marks_data(st.session_state.student_data)
-                            st.success("✅ Photo එකෙන් දත්ත සාර්ථකව පද්ධතියට සේව් කරගන්නා ලදී!")
+                            st.success("✅ PDF එකෙන් දත්ත සාර්ථකව ඇතුළත් කරගන්නා ලදී!")
                             st.dataframe(extracted_df, use_container_width=True)
-                        else:
-                            st.error("දත්ත නිවැරදිව ලබා ගැනීමට නොහැකි විය. කරුණාකර පැහැදිලි ඡායාරූපයක් යොදන්න.")
                 except Exception as e:
-                    st.error(f"දත්ත ලබා ගැනීමේදී දෝෂයක් සිදු විය: {str(e)}")
+                    st.error(f"දෝෂයක් සිදු විය: {str(e)}")
 
+    # METHOD 3: MANUAL ENTRY
     else:
         col1, col2 = st.columns(2)
         with col1:
@@ -299,7 +333,6 @@ with tab1:
             year = st.selectbox("වර්ෂය තෝරන්න:", YEARS, index=1, key="entry_year")
             term = st.selectbox("වාරය තෝරන්න:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"], key="entry_term")
             
-            # Check roster options
             roster_list = st.session_state.roster_data.get(grade, [])
             if roster_list:
                 selected_student_option = st.selectbox(
@@ -319,7 +352,6 @@ with tab1:
             for sub in SUBJECTS:
                 marks_dict[sub] = st.number_input(f"{sub} ලකුණු:", min_value=0, max_value=100, value=0, step=1)
 
-        # Checking if data for this student/term/year is already locked
         is_locked = False
         if not st.session_state.student_data.empty:
             check_df = st.session_state.student_data[
@@ -337,7 +369,6 @@ with tab1:
             st.error("⛔ මෙම ශිෂ්‍යයාගේ මෙම වර්ෂයේ සහ වාරයේ ලකුණු දැනටමත් Lock කර ඇත. වෙනස් කිරීමට Admin අමතන්න.")
         else:
             btn_col1, btn_col2 = st.columns(2)
-            
             with btn_col1:
                 if st.button("💾 තාවකාලිකව සුරකින්න (Save Draft)", use_container_width=True):
                     if student_id:
@@ -349,9 +380,8 @@ with tab1:
                         new_rows = []
                         for sub, mark in marks_dict.items():
                             new_rows.append({
-                                "Student ID": student_id,
-                                "Grade": grade, "Year": year, "Term": term, "Subject": sub,
-                                "Marks": mark, "Status": "Draft"
+                                "Student ID": student_id, "Grade": grade, "Year": year, "Term": term, 
+                                "Subject": sub, "Marks": mark, "Status": "Draft"
                             })
                         st.session_state.student_data = pd.concat([st.session_state.student_data, pd.DataFrame(new_rows)], ignore_index=True)
                         save_marks_data(st.session_state.student_data)
@@ -370,9 +400,8 @@ with tab1:
                         new_rows = []
                         for sub, mark in marks_dict.items():
                             new_rows.append({
-                                "Student ID": student_id,
-                                "Grade": grade, "Year": year, "Term": term, "Subject": sub,
-                                "Marks": mark, "Status": "Locked"
+                                "Student ID": student_id, "Grade": grade, "Year": year, "Term": term, 
+                                "Subject": sub, "Marks": mark, "Status": "Locked"
                             })
                         st.session_state.student_data = pd.concat([st.session_state.student_data, pd.DataFrame(new_rows)], ignore_index=True)
                         save_marks_data(st.session_state.student_data)
@@ -398,7 +427,6 @@ with tab2:
 
     st.divider()
 
-    # Filter Data
     sub_df = st.session_state.student_data[
         (st.session_state.student_data["Grade"] == sel_grade) &
         (st.session_state.student_data["Year"] == sel_year) &

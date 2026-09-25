@@ -3,8 +3,7 @@ import pandas as pd
 import json
 import os
 import plotly.express as px
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from PIL import Image
 
 # Page Setup
@@ -18,6 +17,9 @@ st.set_page_config(
 # Admin Password & API Configuration
 ADMIN_PASSWORD = "sirisumana123"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+
+if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY":
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Permanent Data Files
 DATA_FILE = "student_marks.json"
@@ -225,7 +227,7 @@ with tab1:
             else:
                 try:
                     with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී..."):
-                        client = genai.Client(api_key=GEMINI_API_KEY)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt_text = (
                             "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
                             "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
@@ -234,10 +236,7 @@ with tab1:
                             '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
                             "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
                         )
-                        response = client.models.generate_content(
-                            model="gemini-2.5-flash",
-                            contents=[img, prompt_text]
-                        )
+                        response = model.generate_content([img, prompt_text])
                         raw_json = response.text.strip().replace("```json", "").replace("```", "")
                         extracted_students = json.loads(raw_json)
                         
@@ -280,14 +279,13 @@ with tab1:
             else:
                 try:
                     with st.spinner("AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී..."):
-                        client = genai.Client(api_key=GEMINI_API_KEY)
-                        pdf_bytes = uploaded_pdf.read()
+                        temp_pdf_path = "temp_uploaded.pdf"
+                        with open(temp_pdf_path, "wb") as f:
+                            f.write(uploaded_pdf.getbuffer())
                         
-                        pdf_part = types.Part.from_bytes(
-                            data=pdf_bytes,
-                            mime_type="application/pdf"
-                        )
+                        pdf_file_ref = genai.upload_file(temp_pdf_path, mime_type="application/pdf")
                         
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt_text = (
                             "මෙම PDF ගොනුවෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
                             "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
@@ -297,9 +295,9 @@ with tab1:
                             "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
                         )
                         
-                        response = client.models.generate_content(
-                            model="gemini-2.5-flash",
-                            contents=[pdf_part, prompt_text]
-                        )
+                        response = model.generate_content([pdf_file_ref, prompt_text])
                         
+                        if os.path.exists(temp_pdf_path):
+                            os.remove(temp_pdf_path)
+
                         raw_json = response.text.strip().replace("```json", "").replace("

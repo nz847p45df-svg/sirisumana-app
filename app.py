@@ -232,8 +232,10 @@ with tab1:
                         """
                         
                         response = client.models.generate_content(
-                            model="gemini-2.5-flash",
-                            contents=[img, prompt]
+    model="gemini-2.5-flash",
+    contents=[img, prompt]
+)
+
                         )
                         
                         raw_json = response.text.strip().replace("```json", "").replace("```", "")

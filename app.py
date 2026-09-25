@@ -680,7 +680,7 @@ with tab2:
         </head>
         <body>
             <div class="header-box">
-                <h2 style="margin:2px;">මහ/දෙනු/ ශ්‍රී සුමන ද්විභාෂා පිරිවෙණ</h2>
+                <h2 style="margin:2px;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා පිරිවෙණ</h2>
                 <h3 style="margin:2px;">විභාග අංශය</h3>
                 <p style="margin:2px;">වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">

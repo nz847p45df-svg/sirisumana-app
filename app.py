@@ -49,16 +49,17 @@ if role == "විදුහල්පති/Admin (Principal)":
 # Tab Layout
 tab1, tab2, tab3 = st.tabs(["📝 දත්ත ඇතුළත් කිරීම", "📊 දත්ත නිරීක්ෂණය / සංස්කරණය", "⚙️ Admin පාලක පුවරුව"])
 
-# List of all subjects
+# List of all 10 subjects
 SUBJECTS = [
-    "ගණිතය (Maths)",
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
-    "පාලි (Pali)",
     "සිංහල (Sinhala)",
+    "පාලි (Pali)",
+    "සංස්കൃත (Sanskrit)",
+    "ගණිතය (Maths)",
     "ඉංග්‍රීසි (English)",
-    "සෞඛ්‍යය (Health Sci.)",
     "ඉතිහාසය (History)",
-    "සමාජ අධ්‍යයනය (Social Sci.)",
+    "සමාජ විද්‍යාව (Social Sci.)",
+    "සෞඛ්‍ය විද්‍යාව (Health Sci.)",
     "භූගෝල විද්‍යාව (Geog. Phy.)"
 ]
 
@@ -78,7 +79,7 @@ with tab1:
             term = st.selectbox("වාරය:", ["1 වන වාරය", "2 වන වාරය", "3 වන වාරය"])
             
         with col2:
-            st.subheader("විෂයයන් සහ ලකුණු")
+            st.subheader("විෂයයන් 10 සහ ලකුණු")
             marks_dict = {}
             for sub in SUBJECTS:
                 marks_dict[sub] = st.number_input(f"{sub}:", min_value=0, max_value=100, value=0, step=1)

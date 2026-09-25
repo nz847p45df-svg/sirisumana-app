@@ -150,12 +150,12 @@ GRADES = [
 # Years List
 YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
 
-# List of all 10 subjects
+# List of all 10 subjects (Updated to 'සංස්කෘත')
 SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
     "සිංහල (Sinhala)",
     "පාලි (Pali)",
-    "සංස්ක්‍රත (Sanskrit)",
+    "සංස්කෘත (Sanskrit)",
     "ගණිතය (Maths)",
     "ඉංග්‍රීසි (English)",
     "ඉතිහාසය (History)",
@@ -287,21 +287,20 @@ with tab1:
                 "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම"
                 " විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
                 "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala),"
-                " පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි"
+                " පාලි (Pali), සංස්කෘත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි"
                 " (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.),"
                 " සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
                 "ලකුණු නැතිනම් 0 යොදන්න.\n"
                 "JSON Format:\n"
                 '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය'
                 ' (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60,'
-                ' "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි'
+                ' "සංස්කෘත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි'
                 ' (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social'
                 ' Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව'
                 ' (Geog. Phy.)": 0}}]\n'
                 "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
             )
 
-            # Retry Logic for 503 / High Demand Errors
             max_retries = 3
             response = None
             for attempt in range(max_retries):
@@ -390,21 +389,20 @@ with tab1:
                 "මෙම PDF ගොනුවෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම"
                 " විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
                 "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala),"
-                " පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි"
+                " පාලි (Pali), සංස්කෘත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි"
                 " (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.),"
                 " සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
                 "ලකුණු නැතිනම් 0 යොදන්න.\n"
                 "JSON Format:\n"
                 '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය'
                 ' (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60,'
-                ' "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි'
+                ' "සංස්කෘත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි'
                 ' (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social'
                 ' Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව'
                 ' (Geog. Phy.)": 0}}]\n'
                 "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
             )
 
-            # Retry Logic for 503 / High Demand Errors
             max_retries = 3
             response = None
             for attempt in range(max_retries):
@@ -581,7 +579,7 @@ with tab1:
 # TAB 2: SUBJECT-WISE OFFICIAL PRINT FORM
 # ----------------------------------------------------
 with tab2:
-  st.header("📄 මූලික පිරිවෙණ වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
+  st.header("📄 වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව")
 
   col_sel1, col_sel2, col_sel3, col_sel4 = st.columns(4)
   with col_sel1:
@@ -681,12 +679,10 @@ with tab2:
             </style>
         </head>
         <body>
-            <button onclick="window.print()" style="background-color:#0d6efd; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; margin-bottom:15px; width:100%;">🖨️ මුද්‍රණය කරන්න (Print / Save as PDF)</button>
-            
             <div class="header-box">
-                <h2 style="margin:2px;">මහ/දෙනු/ සිරිසුමන ද්විභාෂා මූලික පිරිවෙණ</h2>
+                <h2 style="margin:2px;">මහ/දෙනු/ ශ්‍රී සුමන ද්විභාෂා පිරිවෙණ</h2>
                 <h3 style="margin:2px;">විභාග අංශය</h3>
-                <p style="margin:2px;">මූලික පිරිවෙණ වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
+                <p style="margin:2px;">වාර පරීක්ෂණ ප්‍රතිඵල විශ්ලේෂණ වාර්තාව ({sel_term}) - {sel_year}</p>
                 <div style="display:flex; justify-content:space-between; margin-top:10px;">
                     <span>ශ්‍රේණිය :- {sel_grade}</span>
                     <span>වර්ෂය :- {sel_year}</span>

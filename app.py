@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+import time
 import plotly.express as px
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from PIL import Image
 
 # Page Setup
@@ -18,6 +18,9 @@ st.set_page_config(
 # Admin Password & API Configuration
 ADMIN_PASSWORD = "sirisumana123"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
+
+if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY":
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # Permanent Data Files
 DATA_FILE = "student_marks.json"
@@ -115,16 +118,13 @@ tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "⚙️ දත්ත පාලනය"
 ])
 
-# Grade List including Foundation Grade & English Medium
 GRADES = [
     "මූලික ශ්‍රේණිය", "1 ශ්‍රේණිය", "2 ශ්‍රේණිය", "3 ශ්‍රේණිය", "4 ශ්‍රේණිය", "5 ශ්‍රේණිය",
     "English Medium 1", "English Medium 2", "English Medium 3", "English Medium 4", "English Medium 5"
 ]
 
-# Years List
 YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
 
-# List of all 10 subjects
 SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
     "සිංහල (Sinhala)",
@@ -138,13 +138,30 @@ SUBJECTS = [
     "භූගෝල විද්‍යාව (Geog. Phy.)"
 ]
 
-# Helper Function for Grading
 def get_grade(marks):
     if marks >= 75: return "A"
     elif marks >= 65: return "B"
     elif marks >= 50: return "C"
     elif marks >= 35: return "S"
     else: return "F"
+
+# Safe Gemini Generation Helper with Retries and Model Fallbacks
+def generate_ai_response(contents_list):
+    models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro']
+    for model_name in models_to_try:
+        for attempt in range(3): # Try 3 times per model
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(contents_list)
+                if response and response.text:
+                    return response.text
+            except Exception as e:
+                if "503" in str(e) or "ResourceExhausted" in str(e):
+                    time.sleep(2) # Wait 2 seconds before retry
+                    continue
+                else:
+                    raise e
+    raise Exception("සර්වර් එක අධික ලෙස කාර්යබහුලයි (503 Service Unavailable). කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න.")
 
 # ----------------------------------------------------
 # TAB 0: STUDENT ROSTER MANAGEMENT
@@ -224,21 +241,14 @@ with tab1:
                 st.error("කරුණාකර API Key එක සකසන්න.")
             else:
                 try:
-                    with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී..."):
-                        client = genai.Client(api_key=GEMINI_API_KEY)
+                    with st.spinner("AI මඟින් Photo එක පරීක්ෂා කරමින් පවතී... (ටිකක් රැඳී සිටින්න)"):
                         prompt_text = (
-                            "මෙම ඡායාරූපයෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
-                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
-                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
-                            "JSON Format:\n"
-                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
-                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
+                            "Extract student marks into a JSON list. "
+                            "Format: [{\"Student ID\": \"3017\", \"Marks\": {\"ත්‍රිපිටක ධර්මය (Tripitaka)\": 48, \"සිංහල (Sinhala)\": 62, \"පාලි (Pali)\": 60, \"සංස්ක්‍රත (Sanskrit)\": 55, \"ගණිතය (Maths)\": 59, \"ඉංග්‍රීසි (English)\": 31, \"ඉතිහාසය (History)\": 0, \"සමාජ විද්‍යාව (Social Sci.)\": 0, \"සෞඛ්‍ය විද්‍යාව (Health Sci.)\": 0, \"භූගෝල විද්‍යාව (Geog. Phy.)\": 0}}] "
+                            "Return only pure JSON without markdown blocks."
                         )
-                        response = client.models.generate_content(
-                            model="gemini-3.5-flash",
-                            contents=[img, prompt_text]
-                        )
-                        raw_json = response.text.strip().replace("```json", "").replace("```", "")
+                        response_text = generate_ai_response([img, prompt_text])
+                        raw_json = response_text.strip().replace("```json", "").replace("```", "").strip()
                         extracted_students = json.loads(raw_json)
                         
                         new_rows = []
@@ -279,30 +289,25 @@ with tab1:
                 st.error("කරුණාකර API Key එක සකසන්න.")
             else:
                 try:
-                    with st.spinner("AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී..."):
-                        client = genai.Client(api_key=GEMINI_API_KEY)
-                        pdf_bytes = uploaded_pdf.read()
+                    with st.spinner("AI මඟින් PDF එක පරීක්ෂා කරමින් පවතී... (ටිකක් රැඳී සිටින්න)"):
+                        temp_pdf_path = "temp_uploaded.pdf"
+                        with open(temp_pdf_path, "wb") as f:
+                            f.write(uploaded_pdf.getbuffer())
                         
-                        pdf_part = types.Part.from_bytes(
-                            data=pdf_bytes,
-                            mime_type="application/pdf"
-                        )
+                        pdf_file_ref = genai.upload_file(temp_pdf_path, mime_type="application/pdf")
                         
                         prompt_text = (
-                            "මෙම PDF ගොනුවෙහි ඇති ශිෂ්‍ය ලකුණු ලේඛනයෙන් සෑම ශිෂ්‍යයෙකුගේම විභාග අංකය (Student ID) සහ ලකුණු පහත JSON ආකෘතියෙන් ලබාදෙන්න.\n"
-                            "අවශ්‍ය විෂයන්: ත්‍රිපිටක ධර්මය (Tripitaka), සිංහල (Sinhala), පාලි (Pali), සංස්ක්‍රත (Sanskrit), ගණිතය (Maths), ඉංග්‍රීසි (English), ඉතිහාසය (History), සමාජ විද්‍යාව (Social Sci.), සෞඛ්‍ය විද්‍යාව (Health Sci.), භූගෝල විද්‍යාව (Geog. Phy.)\n"
-                            "ලකුණු නැතිනම් 0 යොදන්න.\n"
-                            "JSON Format:\n"
-                            '[{"Student ID": "3017", "Marks": {"ත්‍රිපිටක ධර්මය (Tripitaka)": 48, "සිංහල (Sinhala)": 62, "පාලි (Pali)": 60, "සංස්ක්‍රත (Sanskrit)": 55, "ගණිතය (Maths)": 59, "ඉංග්‍රීසි (English)": 31, "ඉතිහාසය (History)": 0, "සමාජ විද්‍යාව (Social Sci.)": 0, "සෞඛ්‍ය විද්‍යාව (Health Sci.)": 0, "භූගෝල විද්‍යාව (Geog. Phy.)": 0}}]\n'
-                            "වෙනත් කිසිදු අමතර සටහනක් නොලියා pure JSON පමණක් ලබාදෙන්න."
+                            "Extract student marks into a JSON list from this PDF. "
+                            "Format: [{\"Student ID\": \"3017\", \"Marks\": {\"ත්‍රිපිටක ධර්මය (Tripitaka)\": 48, \"සිංහල (Sinhala)\": 62, \"පාලි (Pali)\": 60, \"සංස්ක්‍රත (Sanskrit)\": 55, \"ගණිතය (Maths)\": 59, \"ඉංග්‍රීසි (English)\": 31, \"ඉතිහාසය (History)\": 0, \"සමාජ විද්‍යාව (Social Sci.)\": 0, \"සෞඛ්‍ය විද්‍යාව (Health Sci.)\": 0, \"භූගෝල විද්‍යාව (Geog. Phy.)\": 0}}] "
+                            "Return only pure JSON without markdown blocks."
                         )
                         
-                        response = client.models.generate_content(
-                            model="gemini-3.5-flash",
-                            contents=[pdf_part, prompt_text]
-                        )
+                        response_text = generate_ai_response([pdf_file_ref, prompt_text])
                         
-                        raw_json = response.text.strip().replace("```json", "").replace("```", "")
+                        if os.path.exists(temp_pdf_path):
+                            os.remove(temp_pdf_path)
+
+                        raw_json = response_text.strip().replace("```json", "").replace("```", "").strip()
                         extracted_students = json.loads(raw_json)
                         
                         new_rows = []

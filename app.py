@@ -57,7 +57,7 @@ st.session_state.student_data = load_marks_data()
 st.session_state.roster_data = load_roster_data()
 
 # Header
-st.title("🏫 මහා/දෙනු/ ශ්‍රී සුමන ද්විභාෂා පිරිවෙන")
+st.title("🏫 මහා/දෙනු/ සිරිසුමන ද්විභාෂා පිරිවෙන")
 st.caption("ශිෂ්‍ය සාධන හා ලේඛන කළමනාකරණ පද්ධතිය - විභාග අංශය")
 st.divider()
 
@@ -100,7 +100,7 @@ SUBJECTS = [
     "ත්‍රිපිටක ධර්මය (Tripitaka)",
     "සිංහල (Sinhala)",
     "පාලි (Pali)",
-    "සංස්ක්‍රත (Sanskrit)",
+    "සංස්කෘත (Sanskrit)",
     "ගණිතය (Maths)",
     "ඉංග්‍රීසි (English)",
     "ඉතිහාසය (History)",
